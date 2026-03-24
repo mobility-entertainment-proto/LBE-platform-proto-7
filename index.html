@@ -106,6 +106,20 @@ html,body{width:100%;height:100%;overflow:hidden;background:#04040e;touch-action
 /* ── Content container ── */
 #content-container{position:fixed;inset:0;z-index:10;display:none;}
 
+/* ── 次ジオフェンスまでの距離オーバーレイ（コンテンツ発動中に表示） ── */
+#next-geo-overlay{
+  position:fixed;bottom:0;left:0;right:0;z-index:20;
+  background:rgba(4,8,24,0.82);
+  padding:8px 16px;
+  display:none;
+  flex-direction:row;align-items:center;justify-content:center;gap:12px;
+}
+#next-geo-overlay.visible{display:flex;}
+#next-geo-label{font-size:11px;color:#445;letter-spacing:1px;}
+#next-geo-name{font-size:13px;color:#66ccff;font-weight:bold;}
+#next-geo-dist{font-size:20px;font-weight:bold;color:#fff;text-shadow:0 0 12px #55aaff;min-width:80px;text-align:right;}
+#next-geo-unit{font-size:11px;color:#445;}
+
 /* ── Debug panel ── */
 #debug-toggle{
   position:fixed;top:8px;right:8px;z-index:100;
@@ -178,6 +192,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:#04040e;touch-action
 <!-- Content area -->
 <div id="content-container"></div>
 
+<!-- 次ジオフェンスまでの距離オーバーレイ -->
+<div id="next-geo-overlay">
+  <span id="next-geo-label">NEXT</span>
+  <span id="next-geo-name"></span>
+  <span id="next-geo-dist">--</span>
+  <span id="next-geo-unit">m</span>
+</div>
+
 <!-- Debug toggle -->
 <button id="debug-toggle" onclick="toggleDebug()">🛠 DEBUG</button>
 
@@ -211,6 +233,9 @@ const statusDist       = document.getElementById('status-dist');
 const statusArea       = document.getElementById('status-area');
 const statusGps        = document.getElementById('status-gps');
 const statusBarFill    = document.getElementById('status-bar-fill');
+const nextGeoOverlay   = document.getElementById('next-geo-overlay');
+const nextGeoName      = document.getElementById('next-geo-name');
+const nextGeoDist      = document.getElementById('next-geo-dist');
 
 // ── Audio unlock ──────────────────────────────────────────────
 function unlockAudio() {
@@ -373,7 +398,7 @@ document.getElementById('config-start-btn').addEventListener('click', () => {
 
   // Start geofence engine
   geofence = new GeofenceEngine(locations, contentRegistry);
-  geofence.start(({ msg, dist, nearestLoc }) => {
+  geofence.start(({ msg, dist, nearestLoc, nextLoc, nextDist }) => {
     statusGps.textContent = `GPS: ${msg}`;
     if (dist !== undefined && nearestLoc) {
       const inside = dist < 1;
@@ -381,6 +406,14 @@ document.getElementById('config-start-btn').addEventListener('click', () => {
       statusArea.textContent = nearestLoc.name;
       const pct = inside ? 100 : Math.max(0, 100 - (dist / 500) * 100);
       statusBarFill.style.width = pct + '%';
+    }
+    // 次ジオフェンスまでの距離オーバーレイ（コンテンツ発動中のみ表示）
+    if (nextLoc && nextDist < Infinity && activeContent) {
+      nextGeoName.textContent = nextLoc.name;
+      nextGeoDist.textContent = nextDist < 1 ? 'エリア内' : nextDist.toFixed(0);
+      nextGeoOverlay.classList.add('visible');
+    } else {
+      nextGeoOverlay.classList.remove('visible');
     }
   });
 
