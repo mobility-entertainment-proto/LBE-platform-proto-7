@@ -42,6 +42,8 @@ export class QuizB {
     this._ttsDebug    = '';     // 診断用：最後の TTS 状態
     this._ttsDebugUntil = 0;   // 診断表示の期限（performance.now ms）
     this.onComplete   = null;   // 全問終了時に index.html から設定されるコールバック
+    this._completeTimer = null; // 全問完了後の自動遷移タイマー
+    this._completeAt    = 0;   // 自動遷移予定時刻（performance.now ms）
     this._introUntil  = 0;
     this._spokenResult = false;
     this._startTime   = 0;
@@ -97,7 +99,8 @@ export class QuizB {
 
   onExit() {
     this._state = 'IDLE';
-    if (this._resultTimer) { clearTimeout(this._resultTimer); this._resultTimer = null; }
+    if (this._resultTimer)  { clearTimeout(this._resultTimer);  this._resultTimer  = null; }
+    if (this._completeTimer){ clearTimeout(this._completeTimer); this._completeTimer = null; }
     if (this._rafId) { cancelAnimationFrame(this._rafId); this._rafId = null; }
     window.removeEventListener('resize', this._boundResize);
     this.audio?.stopSpeech();
@@ -109,7 +112,8 @@ export class QuizB {
   onStart() { if (this._state === 'IDLE') this._startQuestion(); }
   onStop()  {
     this.audio?.stopSpeech();
-    if (this._resultTimer) { clearTimeout(this._resultTimer); this._resultTimer = null; }
+    if (this._resultTimer)  { clearTimeout(this._resultTimer);  this._resultTimer  = null; }
+    if (this._completeTimer){ clearTimeout(this._completeTimer); this._completeTimer = null; }
     this._state = 'IDLE';
   }
 
@@ -756,12 +760,30 @@ export class QuizB {
 
     const hasNext = (this._qIndex + 1) < (this.questions?.length || 0);
     const bw = this.W * .38, bh = this.H * .08;
+
+    // 最終問題なら自動遷移タイマー起動
+    if (!hasNext && !this._completeTimer) {
+      this._completeAt = performance.now() + 5000;
+      this._completeTimer = setTimeout(() => {
+        this._completeTimer = null;
+        if (this.onComplete) this.onComplete();
+        else { this._state = 'IDLE'; this._qIndex = 0; }
+      }, 5000);
+    }
+
     if (hasNext) {
       this._drawBtn('次の問題 ▶', this.cx - bw*.55, this.H*.82, bw, bh, '#0e1a30', '#66ccff', () => {
         this._qIndex++; this._startQuestion();
       });
+    } else {
+      // カウントダウン表示
+      const remaining = Math.ceil(Math.max(0, this._completeAt - performance.now()) / 1000);
+      c.fillStyle = '#aaaaaa'; c.font = `${this.H*.028|0}px monospace`; c.textAlign = 'center';
+      c.fillText(`${remaining}秒後に次のステージへ...`, this.cx, this.H*.76);
     }
+
     this._drawBtn('終了', this.cx + (hasNext ? bw*.55 : 0), this.H*.82, bw, bh, '#1a0a0a', '#ff6666', () => {
+      if (this._completeTimer) { clearTimeout(this._completeTimer); this._completeTimer = null; }
       if (this.onComplete) {
         this.onComplete(); // 全問完了通知 → 待機画面へ戻る
       } else {
