@@ -1,54 +1,71 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+<!-- LBE-platform-proto-4: バスガイド型 飯倉→お台場 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>LBE Platform</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<title>Bus Guide LBE — 飯倉→お台場</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-html,body{width:100%;height:100%;overflow:hidden;background:#04040e;touch-action:none;
+html,body{width:100%;height:100%;overflow:hidden;background:#04040e;
   font-family:'Consolas','Courier New',monospace;color:#fff;}
 
-/* ── Config screen ── */
+/* ══ Config screen ══════════════════════════════════════════════ */
 #config-screen{
-  position:fixed;inset:0;z-index:6;
-  background:#04040e;
+  position:fixed;inset:0;z-index:6;background:#04040e;
   display:flex;flex-direction:column;align-items:center;
-  overflow-y:auto;padding:20px 16px 40px;touch-action:auto;
+  overflow-y:auto;padding:20px 16px 48px;touch-action:auto;
 }
 #config-screen.hidden{display:none;}
 
 #config-title{
-  font-size:clamp(22px,5vw,36px);letter-spacing:4px;color:#fff;
-  text-shadow:0 0 24px #55aaff;margin-bottom:4px;margin-top:8px;
+  font-size:clamp(20px,5vw,32px);letter-spacing:4px;color:#fff;
+  text-shadow:0 0 24px #55aaff;margin-bottom:2px;margin-top:8px;
 }
-#config-subtitle{font-size:12px;color:#445;letter-spacing:2px;margin-bottom:28px;}
+#config-route{font-size:12px;color:#88aacc;letter-spacing:2px;margin-bottom:4px;}
+#config-subtitle{font-size:11px;color:#334;letter-spacing:2px;margin-bottom:24px;}
 
-.config-loc-card{
+.ev-card{
   width:100%;max-width:520px;
   background:#0d0d20;border:1px solid #2a2a4a;border-radius:12px;
-  padding:16px 18px;margin-bottom:14px;
+  padding:14px 16px;margin-bottom:12px;
 }
-.config-loc-name{
-  font-size:clamp(13px,3vw,16px);color:#66ccff;margin-bottom:14px;
-  letter-spacing:1px;display:flex;align-items:center;gap:8px;
+.ev-card-header{
+  display:flex;align-items:center;gap:8px;margin-bottom:10px;
 }
-.config-loc-name span.tag{
-  font-size:10px;background:#1a2a40;border:1px solid #2a4a6a;
-  border-radius:4px;padding:2px 7px;color:#4488aa;letter-spacing:1px;
+.ev-step{
+  width:26px;height:26px;border-radius:50%;
+  background:#1a1a40;border:1px solid #334488;
+  font-size:11px;color:#6688cc;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
 }
-.config-fields{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
-.config-field label{font-size:10px;color:#445;letter-spacing:1px;display:block;margin-bottom:5px;}
-.config-field input{
-  width:100%;padding:8px 10px;background:#04040e;
+.ev-name{font-size:clamp(13px,3.5vw,15px);color:#88aaff;letter-spacing:1px;}
+.ev-type{
+  margin-left:auto;font-size:10px;background:#101a30;
+  border:1px solid #2a3a60;border-radius:4px;
+  padding:2px 7px;color:#4466aa;letter-spacing:1px;flex-shrink:0;
+}
+.ev-radius-row{
+  display:flex;align-items:center;gap:8px;
+}
+.ev-radius-row label{font-size:10px;color:#445;letter-spacing:1px;white-space:nowrap;}
+.ev-radius-num{
+  width:66px;padding:6px 8px;background:#04040e;
   border:1px solid #2a2a4a;border-radius:6px;
   color:#eee;font-family:monospace;font-size:13px;
-  outline:none;touch-action:manipulation;
+  outline:none;touch-action:manipulation;text-align:center;
 }
-.config-field input:focus{border-color:#55aaff;}
+.ev-radius-num:focus{border-color:#55aaff;}
+.ev-radius-slider{flex:1;accent-color:#55aaff;}
+.ev-reset-btn{
+  padding:5px 9px;background:#0a0a1c;border:1px solid #2a2a4a;
+  border-radius:5px;color:#556;font-size:10px;cursor:pointer;
+  font-family:monospace;white-space:nowrap;touch-action:manipulation;
+}
+.ev-reset-btn:active{background:#141428;color:#88aaff;}
+.ev-coord{font-size:10px;color:#334;letter-spacing:0.5px;margin-top:6px;}
 
 #config-start-btn{
   width:100%;max-width:520px;
@@ -56,26 +73,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:#04040e;touch-action
   background:#0e1a30;border:2px solid #55aaff;color:#66ccff;
   font-family:monospace;font-size:clamp(15px,3.5vw,20px);
   font-weight:bold;cursor:pointer;letter-spacing:3px;
-  margin-top:8px;touch-action:manipulation;
+  margin-top:10px;touch-action:manipulation;
 }
 #config-start-btn:active{background:#1a2a44;}
 
-/* ── Rhythm settings card ── */
-#rg-config-card{width:100%;max-width:520px;background:#0d0d20;border:1px solid #2a2a4a;border-radius:12px;padding:16px 18px;margin-bottom:14px;}
-.rg-diff-row{display:flex;gap:10px;margin-bottom:10px;}
-.rg-diff-btn{
-  flex:1;padding:11px 0;border-radius:8px;border:2px solid #2a2a4a;
-  background:#0d0d20;color:#445;font-family:monospace;font-size:12px;
-  font-weight:bold;cursor:pointer;letter-spacing:1px;touch-action:manipulation;transition:all .15s;
-}
-#rg-diff-desc{font-size:10px;color:#445;margin-bottom:14px;min-height:14px;}
-.rg-offset-row{display:flex;align-items:center;gap:10px;}
-.rg-offset-row span{font-size:11px;color:#445;white-space:nowrap;}
-.rg-offset-row input{flex:1;accent-color:#55aaff;}
-#rg-offset-val{text-align:center;margin-top:8px;font-size:15px;font-weight:bold;color:#eee;}
-#rg-offset-hint{font-size:10px;color:#445;margin-top:6px;text-align:center;}
-
-/* ── Status screen ── */
+/* ══ Status screen ══════════════════════════════════════════════ */
 #status-screen{
   position:fixed;inset:0;z-index:5;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -84,252 +86,341 @@ html,body{width:100%;height:100%;overflow:hidden;background:#04040e;touch-action
 #status-screen.hidden{opacity:0;pointer-events:none;}
 
 #status-title{
-  font-size:clamp(20px,5vw,36px);letter-spacing:3px;color:#fff;
-  text-shadow:0 0 24px #55aaff;margin-bottom:8px;
+  font-size:clamp(18px,5vw,30px);letter-spacing:3px;color:#fff;
+  text-shadow:0 0 24px #55aaff;margin-bottom:4px;
 }
-#status-subtitle{font-size:12px;color:#445;letter-spacing:2px;margin-bottom:40px;}
+#status-route{font-size:11px;color:#88aacc;letter-spacing:2px;margin-bottom:28px;}
+#status-next-label{font-size:10px;color:#445;letter-spacing:2px;margin-bottom:6px;}
+#status-event-name{
+  font-size:clamp(15px,4vw,22px);color:#88aaff;margin-bottom:8px;
+  letter-spacing:1px;text-align:center;max-width:80vw;
+}
 #status-dist{
-  font-size:clamp(32px,8vw,64px);font-weight:bold;color:#66ccff;
-  text-shadow:0 0 20px #55aaff;margin-bottom:8px;
+  font-size:clamp(28px,8vw,52px);font-weight:bold;color:#66ccff;
+  text-shadow:0 0 20px #55aaff;margin-bottom:4px;
 }
-#status-area{font-size:clamp(12px,3vw,18px);color:#778;margin-bottom:36px;letter-spacing:1px;}
+#status-dist-unit{font-size:13px;color:#445;margin-bottom:28px;}
+
+#status-progress{display:flex;gap:10px;margin-bottom:28px;}
+.sp-dot{
+  width:12px;height:12px;border-radius:50%;
+  background:#1a1a30;border:1px solid #2a2a44;transition:all .3s;
+  cursor:default;
+}
+.sp-dot.done  {background:#55aaff;border-color:#55aaff;box-shadow:0 0 6px #55aaff;}
+.sp-dot.active{background:#ffcc44;border-color:#ffcc44;box-shadow:0 0 8px #ffcc44;
+  animation:pulse .8s infinite;}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.35);}}
+
 #status-gps{
   position:fixed;bottom:12px;left:0;right:0;text-align:center;
   font-size:11px;color:#334;letter-spacing:1px;
 }
-#status-bar{
-  width:min(70vw,320px);height:6px;background:rgba(255,255,255,0.07);
-  border-radius:3px;margin:0 auto 24px;overflow:hidden;
-}
-#status-bar-fill{height:100%;background:#55aaff;border-radius:3px;transition:width .5s;}
 
-/* ── Content container ── */
+/* ══ Content container ══════════════════════════════════════════ */
 #content-container{position:fixed;inset:0;z-index:10;display:none;}
 
-/* ── 次ジオフェンスまでの距離オーバーレイ（コンテンツ発動中に表示） ── */
-#next-geo-overlay{
-  position:fixed;bottom:0;left:0;right:0;z-index:20;
-  background:rgba(4,8,24,0.82);
-  padding:8px 16px;
-  display:none;
-  flex-direction:row;align-items:center;justify-content:center;gap:12px;
-}
-#next-geo-overlay.visible{display:flex;}
-#next-geo-label{font-size:11px;color:#445;letter-spacing:1px;}
-#next-geo-name{font-size:13px;color:#66ccff;font-weight:bold;}
-#next-geo-dist{font-size:20px;font-weight:bold;color:#fff;text-shadow:0 0 12px #55aaff;min-width:80px;text-align:right;}
-#next-geo-unit{font-size:11px;color:#445;}
-
-/* ── Debug panel ── */
+/* ══ Debug toggle ═══════════════════════════════════════════════ */
 #debug-toggle{
   position:fixed;top:8px;right:8px;z-index:100;
   background:rgba(10,10,25,0.85);border:1px solid #334;
   color:#778;font-size:11px;padding:6px 10px;border-radius:5px;
   cursor:pointer;font-family:monospace;touch-action:manipulation;
 }
+
+/* ══ Debug panel ════════════════════════════════════════════════ */
 #debug-panel{
-  position:fixed;bottom:0;left:0;right:0;z-index:100;
-  background:rgba(4,8,16,0.97);border-top:1px solid #2a2a4a;
-  padding:16px;display:none;
+  position:fixed;inset:0;z-index:200;
+  background:rgba(4,8,16,0.98);overflow-y:auto;
+  padding:16px;display:none;touch-action:auto;
 }
 #debug-panel.open{display:block;}
-#debug-panel h3{font-size:12px;color:#445;letter-spacing:2px;margin-bottom:12px;}
-#debug-locations{display:flex;flex-wrap:wrap;gap:8px;}
-.debug-loc-btn{
-  padding:8px 14px;background:#0d0d20;border:1px solid #334;
-  border-radius:6px;color:#aaa;font-size:12px;cursor:pointer;
-  font-family:monospace;touch-action:manipulation;
+#debug-close{
+  position:sticky;top:0;float:right;
+  padding:6px 12px;background:#1a0a0a;border:1px solid #554;
+  border-radius:5px;color:#f88;font-size:12px;cursor:pointer;
+  font-family:monospace;touch-action:manipulation;margin-bottom:12px;
 }
-.debug-loc-btn:active{background:#1a1a35;}
-.debug-exit-btn{
+#debug-panel h3{
+  font-size:11px;color:#445;letter-spacing:2px;margin-bottom:10px;clear:both;
+}
+.dbg-section{margin-bottom:20px;}
+.dbg-gps{font-size:12px;color:#778;margin-bottom:8px;white-space:pre-line;line-height:1.7;}
+.dbg-event-row{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:8px 10px;margin-bottom:6px;
+  background:#0d0d20;border:1px solid #1a1a3a;border-radius:8px;
+}
+.dbg-event-status{
+  font-size:10px;padding:2px 7px;border-radius:4px;
+  font-family:monospace;white-space:nowrap;letter-spacing:1px;
+}
+.status-pending{background:#0a0a1c;border:1px solid #222;color:#334;}
+.status-waiting{background:#0a1a10;border:1px solid #1a4a2a;color:#44aa66;}
+.status-active {background:#1a1a00;border:1px solid #555500;color:#cccc00;}
+.status-fired  {background:#0a0a20;border:1px solid #224;color:#336;}
+.dbg-event-name{font-size:12px;color:#aaa;flex:1;}
+.dbg-force-btn{
+  padding:6px 12px;background:#0d0d20;border:1px solid #334;
+  border-radius:5px;color:#88aaff;font-size:11px;cursor:pointer;
+  font-family:monospace;touch-action:manipulation;white-space:nowrap;
+}
+.dbg-force-btn:active{background:#1a1a35;}
+.dbg-exit-btn{
   padding:8px 14px;background:#1a0808;border:1px solid #554;
   border-radius:6px;color:#f88;font-size:12px;cursor:pointer;
-  font-family:monospace;touch-action:manipulation;margin-top:8px;
+  font-family:monospace;touch-action:manipulation;margin-top:6px;
+}
+#dbg-log{
+  font-size:11px;color:#556;max-height:140px;overflow-y:auto;
+  background:#0a0a18;border:1px solid #1a1a2a;border-radius:6px;
+  padding:10px;line-height:1.8;
 }
 </style>
 </head>
 <body>
 
-<!-- Config screen (shown first) -->
+<!-- ━━ Config screen ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
 <div id="config-screen">
-  <div id="config-title">LBE PLATFORM</div>
+  <div id="config-title">BUS GUIDE LBE</div>
+  <div id="config-route">飯倉 → 首都高C1〜B → お台場</div>
   <div id="config-subtitle">LOCATION BASED ENTERTAINMENT</div>
   <div id="config-cards"></div>
-
-  <!-- Rhythm game settings -->
-  <div id="rg-config-card">
-    <div class="config-loc-name">🎵 RHYTHM GAME 設定 <span class="tag">SETTINGS</span></div>
-    <div style="font-size:10px;color:#445;letter-spacing:2px;margin-bottom:10px;">難易度</div>
-    <div class="rg-diff-row">
-      <button class="rg-diff-btn" data-diff="EASY">EASY</button>
-      <button class="rg-diff-btn" data-diff="NORMAL">NORMAL</button>
-      <button class="rg-diff-btn" data-diff="HARD">HARD</button>
-    </div>
-    <div id="rg-diff-desc"></div>
-    <div style="font-size:10px;color:#445;letter-spacing:2px;margin-bottom:10px;">オフセット調整</div>
-    <div class="rg-offset-row">
-      <span>-200ms</span>
-      <input type="range" id="rg-offset-input" min="-200" max="200" step="1" value="0">
-      <span>+200ms</span>
-    </div>
-    <div id="rg-offset-val">0ms</div>
-    <div id="rg-offset-hint">早押し傾向→+ / 遅押し傾向→−</div>
-  </div>
-
   <button id="config-start-btn">▶ START</button>
 </div>
 
-<!-- Status screen (geofence waiting, hidden until START) -->
+<!-- ━━ Status screen ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
 <div id="status-screen" class="hidden">
-  <div id="status-title">LBE PLATFORM</div>
-  <div id="status-subtitle">LOCATION BASED ENTERTAINMENT</div>
-  <div id="status-dist">-- m</div>
-  <div id="status-area">位置情報を取得中...</div>
-  <div id="status-bar"><div id="status-bar-fill" style="width:0%"></div></div>
+  <div id="status-title">BUS GUIDE LBE</div>
+  <div id="status-route">飯倉 → 首都高 → お台場</div>
+  <div id="status-next-label">NEXT EVENT</div>
+  <div id="status-event-name">—</div>
+  <div id="status-dist">—</div>
+  <div id="status-dist-unit"></div>
+  <div id="status-progress"></div>
   <div id="status-gps">GPS: 取得待機中</div>
 </div>
 
-<!-- Content area -->
+<!-- ━━ Content area ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
 <div id="content-container"></div>
 
-<!-- 次ジオフェンスまでの距離オーバーレイ -->
-<div id="next-geo-overlay">
-  <span id="next-geo-label">NEXT</span>
-  <span id="next-geo-name"></span>
-  <span id="next-geo-dist">--</span>
-  <span id="next-geo-unit">m</span>
-</div>
+<!-- ━━ Debug toggle ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<button id="debug-toggle">🛠 DEBUG</button>
 
-<!-- Debug toggle -->
-<button id="debug-toggle" onclick="toggleDebug()">🛠 DEBUG</button>
-
-<!-- Debug panel -->
+<!-- ━━ Debug panel ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
 <div id="debug-panel">
-  <h3>DEBUG — FORCE LOCATION</h3>
-  <div id="debug-locations"></div>
-  <button class="debug-exit-btn" onclick="debugExit()">✕ エリアを出る</button>
+  <button id="debug-close">✕ 閉じる</button>
+  <div class="dbg-section">
+    <h3>GPS / 状態</h3>
+    <div id="dbg-gps" class="dbg-gps">—</div>
+  </div>
+  <div class="dbg-section">
+    <h3>イベント状態</h3>
+    <div id="dbg-events"></div>
+    <button class="dbg-exit-btn" id="dbg-exit-btn">✕ 現在のイベントを終了</button>
+  </div>
+  <div class="dbg-section">
+    <h3>発火ログ</h3>
+    <div id="dbg-log">（発火なし）</div>
+  </div>
 </div>
 
 <script type="module">
-import { AudioManager }  from './core/audio.js';
-import { GeofenceEngine } from './core/geofence.js';
-import { RhythmGame }    from './contents/rhythm/game.js';
-import { QuizB }         from './contents/quiz-b/game.js';
-import { QuizA }         from './contents/quiz-a/game.js';
+import { AudioManager }    from './core/audio.js';
+import { EventEngine }     from './core/event-engine.js';
+import { GuideCard }       from './contents/guide-card/game.js';
+import { FamilyQuiz }      from './contents/quiz/game.js';
+import { ShortRhythmGame } from './contents/rhythm-short/game.js';
 
-// ── State ────────────────────────────────────────────────────
-const audioManager = new AudioManager();
-let geofence = null;
-let locations = [];
-let audioUnlocked = false;
-let activeContent = null;
+// ── イベント定義（ルート順） ──────────────────────────────────────
+const EVENT_DEFS = [
+  {
+    id:            'event_intro_miraikan',
+    name:          '未来館への導入',
+    icon:          '🏛️',
+    lat:           35.6578,
+    lng:           139.7385,
+    defaultRadius: 400,
+    minRadius:     150,
+    contentType:   'guide',
+    contentData: {
+      icon:  '🏛️',
+      title: '今日の目的地は科学未来館',
+      body:  '今日はお台場の日本科学未来館へ向かいます。未来館には、地球を映し出す大きなシンボル展示「ジオ・コスモス」があります。到着したら、家族で"いちばん未来っぽい"と思った展示を1つ決めてみましょう。',
+    },
+  },
+  {
+    id:            'event_shutoko_guide',
+    name:          '首都高ガイド',
+    icon:          '🛣️',
+    lat:           35.6488,
+    lng:           139.7488,
+    defaultRadius: 500,
+    minRadius:     200,
+    contentType:   'guide',
+    contentData: {
+      icon:   '🛣️',
+      title:  '東京の高速道路は、どうしてこんなに複雑？',
+      body:   '東京の高速道路が複雑なのは、巨大な街ができたあとに、その上へ道路を通していったからです。まっすぐ作る余裕が少なく、建物や川をよけながら通したため、東京らしい独特な形になりました。',
+      footer: 'このあと、海へ抜ける景色に変わっていきます。',
+    },
+  },
+  {
+    id:            'event_family_quiz',
+    name:          '家族4択クイズ',
+    icon:          '🧠',
+    lat:           35.6438,
+    lng:           139.7588,
+    defaultRadius: 550,
+    minRadius:     220,
+    contentType:   'quiz',
+    contentData: {
+      question:     'このあと向かう日本科学未来館で、いちばん"未来っぽい"展示テーマとして有名なのはどれだと思う？',
+      choices:      ['ロボット', '恐竜', '忍者', 'お城'],
+      correctIndex: 0,
+      correctMsg:   '正解はロボット。科学未来館ではロボットや地球、宇宙、未来のくらしに関する展示が人気です。着いたら、家族で"いちばん未来っぽかった展示"をあとで話してみましょう。',
+      wrongMsg:     '正解はロボット。でも、恐竜や忍者がいても面白そうですね。着いたら"自分だったらどんな未来館にするか"も話してみましょう。',
+    },
+  },
+  {
+    id:            'event_rainbow_bridge_prelude',
+    name:          'レインボーブリッジ予告',
+    icon:          '🌉',
+    lat:           35.6408,
+    lng:           139.7628,
+    defaultRadius: 450,
+    minRadius:     180,
+    contentType:   'guide',
+    contentData: {
+      icon:      '🌉',
+      title:     'まもなくレインボーブリッジ',
+      body:      'ここから景色が大きく開けて、お台場へ入っていきます。橋に入ったら、短いリズムゲームが始まります。',
+      countdown: true,
+    },
+  },
+  {
+    id:            'event_rhythm_rainbow_bridge',
+    name:          'リズムゲーム（レインボーブリッジ）',
+    icon:          '🎮',
+    lat:           35.6388,
+    lng:           139.7648,
+    defaultRadius: 350,
+    minRadius:     120,
+    contentType:   'rhythm-short',
+    contentData: {
+      endMessage: 'お台場エリアに入りました。科学未来館まで、もうすぐです。',
+    },
+  },
+];
 
-// ── DOM refs ─────────────────────────────────────────────────
+// ── localStorage ─────────────────────────────────────────────────
+const LS_KEY = 'lbe4_event_radii';
+function loadRadii() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch(_) { return {}; }
+}
+function saveRadii(map) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(map)); } catch(_) {}
+}
+
+// ── DOM refs ──────────────────────────────────────────────────────
 const configScreen     = document.getElementById('config-screen');
 const configCards      = document.getElementById('config-cards');
 const statusScreen     = document.getElementById('status-screen');
 const contentContainer = document.getElementById('content-container');
+const statusEventName  = document.getElementById('status-event-name');
 const statusDist       = document.getElementById('status-dist');
-const statusArea       = document.getElementById('status-area');
+const statusDistUnit   = document.getElementById('status-dist-unit');
+const statusProgress   = document.getElementById('status-progress');
 const statusGps        = document.getElementById('status-gps');
-const statusBarFill    = document.getElementById('status-bar-fill');
-const nextGeoOverlay   = document.getElementById('next-geo-overlay');
-const nextGeoName      = document.getElementById('next-geo-name');
-const nextGeoDist      = document.getElementById('next-geo-dist');
+const dbgGps           = document.getElementById('dbg-gps');
+const dbgEvents        = document.getElementById('dbg-events');
+const dbgLog           = document.getElementById('dbg-log');
 
-// ── Audio unlock ──────────────────────────────────────────────
-function unlockAudio() {
-  if (audioUnlocked) return;
-  audioManager.unlock();
-  audioUnlocked = true;
-}
+// ── State ─────────────────────────────────────────────────────────
+const audioManager = new AudioManager();
+let engine = null;
+let events = [];   // working copy with resolved .radius
+let activeContent  = null;
 
-// ── Load locations & build config cards ──────────────────────
-const FALLBACK_LOCATIONS = [
-  { id:'location_001', name:'Test Area - Rhythm Game', lat:35.6197488, lng:139.7762173, radius:2400, content:'rhythm', content_id:'highway_001' },
-  { id:'location_002', name:'Test Area - Quiz',        lat:35.6197488, lng:139.7762173, radius:6000, content:'quiz-b', content_id:'santamonica_001' },
-];
-try {
-  const locData = await fetch('./data/locations.json').then(r => r.json());
-  locations = locData;
-} catch (e) {
-  console.warn('[LBE] locations.json 読み込み失敗 → フォールバック:', e.message);
-  locations = FALLBACK_LOCATIONS;
-}
+// ── Build config cards ────────────────────────────────────────────
+const TYPE_LABELS = {
+  'guide':        'ガイド',
+  'quiz':         'クイズ',
+  'rhythm-short': 'リズムゲーム',
+};
+const savedRadii = loadRadii();
 
-const CONTENT_LABELS = { 'rhythm': 'RHYTHM GAME', 'quiz-b': 'QUIZ B', 'quiz-a': 'QUIZ A' };
-for (const loc of locations) {
+for (let i = 0; i < EVENT_DEFS.length; i++) {
+  const def = EVENT_DEFS[i];
+  const saved = savedRadii[def.id];
+  const initRadius = (saved !== undefined)
+    ? Math.max(def.minRadius, +saved)
+    : def.defaultRadius;
+
   const card = document.createElement('div');
-  card.className = 'config-loc-card';
-  card.dataset.locId = loc.id;
+  card.className = 'ev-card';
+  card.dataset.evId = def.id;
   card.innerHTML = `
-    <div class="config-loc-name">
-      📍 ${loc.name}
-      <span class="tag">${CONTENT_LABELS[loc.content] || loc.content}</span>
+    <div class="ev-card-header">
+      <div class="ev-step">${i + 1}</div>
+      <div class="ev-name">${def.icon} ${def.name}</div>
+      <div class="ev-type">${TYPE_LABELS[def.contentType] || def.contentType}</div>
     </div>
-    <div class="config-fields">
-      <div class="config-field">
-        <label>LATITUDE</label>
-        <input type="number" step="0.0001" data-field="lat" value="${loc.lat}">
-      </div>
-      <div class="config-field">
-        <label>LONGITUDE</label>
-        <input type="number" step="0.0001" data-field="lng" value="${loc.lng}">
-      </div>
-      <div class="config-field">
-        <label>RADIUS (m)</label>
-        <input type="number" step="10" data-field="radius" value="${loc.radius}">
-      </div>
+    <div class="ev-radius-row">
+      <label>半径</label>
+      <input type="number" class="ev-radius-num" data-id="${def.id}"
+        value="${initRadius}" min="${def.minRadius}" max="5000" step="10">
+      <input type="range" class="ev-radius-slider" data-id="${def.id}"
+        value="${Math.min(initRadius, 2000)}" min="${def.minRadius}" max="2000" step="10">
+      <button class="ev-reset-btn" data-id="${def.id}" data-default="${def.defaultRadius}">↺ 初期値</button>
     </div>
+    <div class="ev-coord">📍 ${def.lat.toFixed(4)}, ${def.lng.toFixed(4)} | 最小${def.minRadius}m</div>
   `;
   configCards.appendChild(card);
 }
 
-// ── Rhythm game settings UI ──────────────────────────────────
-const RG_DIFF_INFO = {
-  EASY:   { col:'#66bb6a', desc:'PERFECT ±150ms / GREAT ±300ms / GOOD ±450ms' },
-  NORMAL: { col:'#26c6da', desc:'PERFECT ±100ms / GREAT ±200ms / GOOD ±300ms' },
-  HARD:   { col:'#ff7043', desc:'PERFECT ±50ms / GREAT ±100ms / GOOD ±160ms'  },
-};
-let rgDiffKey = localStorage.getItem('rg_diff') || 'NORMAL';
+// Wire number ↔ slider sync
+configCards.querySelectorAll('.ev-radius-num').forEach(num => {
+  const id     = num.dataset.id;
+  const slider = configCards.querySelector(`.ev-radius-slider[data-id="${id}"]`);
+  num.addEventListener('input', () => {
+    const def = EVENT_DEFS.find(d => d.id === id);
+    const v = Math.max(def.minRadius, +num.value);
+    num.value    = v;
+    slider.value = Math.min(v, 2000);
+    _autoSaveRadii();
+  });
+  slider.addEventListener('input', () => {
+    num.value = slider.value;
+    _autoSaveRadii();
+  });
+});
 
-function rgSelectDiff(key) {
-  rgDiffKey = key;
-  for (const btn of document.querySelectorAll('.rg-diff-btn')) {
-    const k = btn.dataset.diff;
-    const info = RG_DIFF_INFO[k];
-    const sel = (k === key);
-    btn.style.borderColor = sel ? info.col : '#2a2a4a';
-    btn.style.color       = sel ? info.col : '#445';
-    btn.style.background  = sel ? '#0a0a15' : '#0d0d20';
-  }
-  document.getElementById('rg-diff-desc').textContent = RG_DIFF_INFO[key]?.desc || '';
+// Reset buttons
+configCards.querySelectorAll('.ev-reset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const id  = btn.dataset.id;
+    const def = +btn.dataset.default;
+    configCards.querySelector(`.ev-radius-num[data-id="${id}"]`).value   = def;
+    const sl = configCards.querySelector(`.ev-radius-slider[data-id="${id}"]`);
+    if (sl) sl.value = Math.min(def, 2000);
+    _autoSaveRadii();
+  });
+});
+
+function _autoSaveRadii() {
+  const map = {};
+  configCards.querySelectorAll('.ev-radius-num').forEach(n => { map[n.dataset.id] = +n.value; });
+  saveRadii(map);
 }
 
-function rgUpdateOffset() {
-  const v = +document.getElementById('rg-offset-input').value;
-  const el = document.getElementById('rg-offset-val');
-  el.textContent = (v >= 0 ? '+' : '') + v + 'ms';
-  el.style.color  = v === 0 ? '#aaa' : v > 0 ? '#ffaa44' : '#4488ff';
-}
-
-// Init rhythm settings UI
-document.getElementById('rg-offset-input').value = localStorage.getItem('rg_offset') || 0;
-rgSelectDiff(rgDiffKey);
-rgUpdateOffset();
-document.querySelectorAll('.rg-diff-btn').forEach(btn =>
-  btn.addEventListener('click', () => rgSelectDiff(btn.dataset.diff))
-);
-document.getElementById('rg-offset-input').addEventListener('input', rgUpdateOffset);
-
-// Content instances
+// ── Content instances ─────────────────────────────────────────────
 const contentRegistry = {
-  'rhythm': new RhythmGame(audioManager),
-  'quiz-b': new QuizB(audioManager),
-  'quiz-a': new QuizA(audioManager),
+  'guide':        new GuideCard(audioManager),
+  'quiz':         new FamilyQuiz(audioManager),
+  'rhythm-short': new ShortRhythmGame(audioManager),
 };
 
-// Inject content UIs (hidden by default)
 for (const [key, content] of Object.entries(contentRegistry)) {
   const ui = content.getUI();
   ui.dataset.contentKey = key;
@@ -337,14 +428,37 @@ for (const [key, content] of Object.entries(contentRegistry)) {
   contentContainer.appendChild(ui);
 }
 
-// ── Show / hide content ───────────────────────────────────────
-function showContent(contentKey) {
+// ── Progress dots ─────────────────────────────────────────────────
+function buildProgressDots() {
+  statusProgress.innerHTML = '';
+  for (let i = 0; i < EVENT_DEFS.length; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'sp-dot';
+    dot.id = `sp-dot-${i}`;
+    dot.title = EVENT_DEFS[i].name;
+    statusProgress.appendChild(dot);
+  }
+}
+buildProgressDots();
+
+function updateProgressDots(states) {
+  states.forEach((s, i) => {
+    const dot = document.getElementById(`sp-dot-${i}`);
+    if (!dot) return;
+    dot.className = 'sp-dot';
+    if (s.status === 'active') dot.classList.add('active');
+    if (s.status === 'fired')  dot.classList.add('done');
+  });
+}
+
+// ── Show / hide content ───────────────────────────────────────────
+function showContent(contentType) {
   for (const el of contentContainer.children) el.style.display = 'none';
-  const target = contentContainer.querySelector(`[data-content-key="${contentKey}"]`);
+  const target = contentContainer.querySelector(`[data-content-key="${contentType}"]`);
   if (target) target.style.display = 'block';
   contentContainer.style.display = 'block';
   statusScreen.classList.add('hidden');
-  activeContent = contentRegistry[contentKey];
+  activeContent = contentRegistry[contentType];
 }
 
 function hideContent() {
@@ -354,103 +468,140 @@ function hideContent() {
   activeContent = null;
 }
 
-// ── Geofence callbacks ────────────────────────────────────────
-for (const loc of locations) {
-  const key = loc.content;
-  const original = contentRegistry[key];
-  if (!original) continue;
-  const origOnEnter = original.onEnter.bind(original);
-  const origOnExit  = original.onExit.bind(original);
-  original.onEnter = async (location) => {
-    showContent(key);
-    // コンテンツが自発的に終了を通知するコールバックを設定
-    original.onComplete = () => {
-      geofence?.contentComplete(location.id); // GeofenceEngine に完了を通知
-      origOnExit(location);
-      hideContent();
-    };
-    await origOnEnter(location);
-  };
-  original.onExit = (location) => {
-    original.onComplete = null;
-    origOnExit(location);
-    hideContent();
-  };
-}
-
-// ── START button ──────────────────────────────────────────────
+// ── START button ──────────────────────────────────────────────────
 document.getElementById('config-start-btn').addEventListener('click', () => {
-  unlockAudio();
+  audioManager.unlock();
 
-  // Read input values → update locations in-place
-  for (const card of configCards.children) {
-    const locId  = card.dataset.locId;
-    const loc    = locations.find(l => l.id === locId);
-    if (!loc) continue;
-    const lat    = parseFloat(card.querySelector('[data-field="lat"]').value);
-    const lng    = parseFloat(card.querySelector('[data-field="lng"]').value);
-    const radius = parseFloat(card.querySelector('[data-field="radius"]').value);
-    if (!isNaN(lat))    loc.lat    = lat;
-    if (!isNaN(lng))    loc.lng    = lng;
-    if (!isNaN(radius)) loc.radius = radius;
-  }
-
-  // Apply rhythm game settings to the instance and persist
-  const rg = contentRegistry['rhythm'];
-  const offsetVal = +document.getElementById('rg-offset-input').value;
-  rg.diffKey    = rgDiffKey;
-  rg.offsetAdj  = offsetVal;
-  localStorage.setItem('rg_diff',   rgDiffKey);
-  localStorage.setItem('rg_offset', offsetVal);
-
-  // Start geofence engine
-  geofence = new GeofenceEngine(locations, contentRegistry);
-  geofence.start(({ msg, dist, nearestLoc, nextLoc, nextDist }) => {
-    statusGps.textContent = `GPS: ${msg}`;
-    if (dist !== undefined && nearestLoc) {
-      const inside = dist < 1;
-      statusDist.textContent = inside ? 'エリア内' : `${dist.toFixed(0)} m`;
-      statusArea.textContent = nearestLoc.name;
-      const pct = inside ? 100 : Math.max(0, 100 - (dist / 500) * 100);
-      statusBarFill.style.width = pct + '%';
-    }
-    // 次ジオフェンスまでの距離オーバーレイ（コンテンツ発動中のみ表示）
-    if (nextLoc && nextDist < Infinity && activeContent) {
-      nextGeoName.textContent = nextLoc.name;
-      nextGeoDist.textContent = nextDist < 1 ? 'エリア内' : nextDist.toFixed(0);
-      nextGeoOverlay.classList.add('visible');
-    } else {
-      nextGeoOverlay.classList.remove('visible');
-    }
+  // Build events with resolved radii from UI
+  events = EVENT_DEFS.map(def => {
+    const numEl  = configCards.querySelector(`.ev-radius-num[data-id="${def.id}"]`);
+    const radius = numEl ? Math.max(def.minRadius, +numEl.value) : def.defaultRadius;
+    return { ...def, radius };
   });
 
-  // Switch to waiting screen
+  engine = new EventEngine(events);
+
+  engine.onEventFire = (ev) => {
+    const content = contentRegistry[ev.contentType];
+    if (!content) return;
+    content.onComplete = () => {
+      engine.markComplete();
+      hideContent();
+    };
+    showContent(ev.contentType);
+    content.onEnter(ev);
+  };
+
+  engine.onEventExit = (ev) => {
+    const content = contentRegistry[ev.contentType];
+    if (content?.onExit) content.onExit();
+  };
+
+  engine.start(({ msg, lat, lng, distToNext, nextEvent, activeIndex, currentIndex, totalEvents }) => {
+    // Status screen
+    statusGps.textContent = lat != null
+      ? `GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`
+      : 'GPS: 取得待機中';
+
+    if (activeIndex >= 0) {
+      const ev = events[activeIndex];
+      statusEventName.textContent = `${ev.icon} ${ev.name}`;
+      statusDist.textContent      = '発動中';
+      statusDistUnit.textContent  = '';
+    } else if (nextEvent) {
+      statusEventName.textContent = `${nextEvent.icon} ${nextEvent.name}`;
+      if (distToNext < 1) {
+        statusDist.textContent     = 'エリア内';
+        statusDistUnit.textContent = '';
+      } else {
+        statusDist.textContent     = distToNext.toFixed(0);
+        statusDistUnit.textContent = 'm まで';
+      }
+    } else {
+      statusEventName.textContent = '全イベント完了 🎉';
+      statusDist.textContent      = '';
+      statusDistUnit.textContent  = '';
+    }
+
+    if (engine) updateProgressDots(engine.getEventStates());
+
+    // Debug panel (always refresh GPS, events only if open)
+    const latStr = lat != null ? lat.toFixed(6) : '—';
+    const lngStr = lng != null ? lng.toFixed(6) : '—';
+    const distStr = (distToNext < Infinity) ? distToNext.toFixed(0) + 'm' : '—';
+    const nextName = currentIndex < totalEvents ? events[currentIndex]?.name : '(全完了)';
+    dbgGps.textContent =
+      `${latStr}, ${lngStr}\n次まで: ${distStr} | 待ち[${currentIndex}/${totalEvents}]: ${nextName}`;
+
+    if (document.getElementById('debug-panel').classList.contains('open')) {
+      _updateDebugEvents();
+    }
+    _updateDebugLog();
+  });
+
   configScreen.classList.add('hidden');
   statusScreen.classList.remove('hidden');
-
-  // Build debug panel
-  const debugLocDiv = document.getElementById('debug-locations');
-  debugLocDiv.innerHTML = '';
-  for (const loc of locations) {
-    const btn = document.createElement('button');
-    btn.className = 'debug-loc-btn';
-    btn.textContent = `📍 ${loc.name}`;
-    btn.onclick = () => {
-      unlockAudio();
-      geofence?.debugForce(loc.id);
-      document.getElementById('debug-panel').classList.remove('open');
-    };
-    debugLocDiv.appendChild(btn);
-  }
+  _updateDebugEvents();
 });
 
-// ── Debug panel globals ───────────────────────────────────────
-window.toggleDebug = () => document.getElementById('debug-panel').classList.toggle('open');
-window.debugExit   = () => {
-  geofence?.debugExit();
+// ── Debug helpers ─────────────────────────────────────────────────
+function _updateDebugEvents() {
+  if (!engine) return;
+  const states = engine.getEventStates();
+  dbgEvents.innerHTML = '';
+  const labelMap = { pending:'待機中', waiting:'→次に発火', active:'●発動中', fired:'完了済' };
+  states.forEach(s => {
+    const row = document.createElement('div');
+    row.className = 'dbg-event-row';
+    row.innerHTML = `
+      <span class="dbg-event-status status-${s.status}">${labelMap[s.status] || s.status}</span>
+      <span class="dbg-event-name">${s.icon} ${s.name} <span style="color:#334;font-size:10px;">(${s.radius}m)</span></span>
+    `;
+    const btn = document.createElement('button');
+    btn.className = 'dbg-force-btn';
+    btn.textContent = '▶ 発火';
+    btn.addEventListener('click', () => {
+      audioManager.unlock();
+      // engine.debugForce handles onExit for current event and onEventFire for new
+      // (onEventFire calls showContent, so no need to call hideContent here)
+      engine.debugForce(s.id);
+      document.getElementById('debug-panel').classList.remove('open');
+    });
+    row.appendChild(btn);
+    dbgEvents.appendChild(row);
+  });
+}
+
+function _updateDebugLog() {
+  if (!engine) return;
+  const log = engine.getFiredLog();
+  if (log.length === 0) { dbgLog.innerHTML = '（発火なし）'; return; }
+  dbgLog.innerHTML = log.map((l, i) =>
+    `<span style="color:#334;">[${i+1}]</span> ` +
+    `<span style="color:#66aaff;">${l.name}</span> ` +
+    `<span style="color:#445;">${l.time}</span>`
+  ).join('<br>');
+  dbgLog.scrollTop = dbgLog.scrollHeight;
+}
+
+// ── Debug panel events ────────────────────────────────────────────
+document.getElementById('debug-toggle').addEventListener('click', () => {
+  const p = document.getElementById('debug-panel');
+  p.classList.toggle('open');
+  if (p.classList.contains('open')) _updateDebugEvents();
+});
+
+document.getElementById('debug-close').addEventListener('click', () => {
+  document.getElementById('debug-panel').classList.remove('open');
+});
+
+document.getElementById('dbg-exit-btn').addEventListener('click', () => {
+  if (!engine) return;
+  // engine.debugExit() calls onEventExit (which calls content.onExit)
+  engine.debugExit();
   hideContent();
   document.getElementById('debug-panel').classList.remove('open');
-};
+});
 </script>
 </body>
 </html>
