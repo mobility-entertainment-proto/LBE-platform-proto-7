@@ -86,6 +86,21 @@ html,body{width:100%;height:100%;overflow:hidden;background:#04040e;
 }
 #status-screen.hidden{opacity:0;pointer-events:none;}
 
+#status-bg{
+  position:absolute;inset:0;width:100%;height:100%;z-index:0;
+}
+#status-overlay{
+  position:absolute;inset:0;z-index:1;
+  background:linear-gradient(180deg, rgba(4,8,24,0.45) 0%, rgba(4,8,24,0.72) 100%);
+}
+#status-content{
+  position:relative;z-index:2;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:min(90vw,620px);
+  padding:28px 22px 120px;
+  text-align:center;
+}
+
 #status-title{
   font-size:clamp(18px,5vw,30px);letter-spacing:3px;color:#fff;
   text-shadow:0 0 24px #55aaff;margin-bottom:4px;
@@ -100,7 +115,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#04040e;
   font-size:clamp(28px,8vw,52px);font-weight:bold;color:#66ccff;
   text-shadow:0 0 20px #55aaff;margin-bottom:4px;
 }
-#status-dist-unit{font-size:13px;color:#445;margin-bottom:28px;}
+#status-dist-unit{
+  font-size:13px;color:#b8d8ff;margin-bottom:28px;
+  text-shadow:0 0 12px rgba(85,170,255,0.18);
+}
 
 #status-progress{display:flex;gap:10px;margin-bottom:28px;}
 .sp-dot{
@@ -192,6 +210,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:#04040e;
 
 <!-- ━━ Status screen ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
 <div id="status-screen" class="hidden">
+  <canvas id="status-bg"></canvas>
+  <div id="status-overlay"></div>
+  <div id="status-content">
   <div id="status-title">BUS GUIDE LBE</div>
   <div id="status-route">飯倉 → 首都高 → お台場</div>
   <div id="status-next-label">NEXT EVENT</div>
@@ -199,6 +220,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#04040e;
   <div id="status-dist">—</div>
   <div id="status-dist-unit"></div>
   <div id="status-progress"></div>
+  </div>
   <div id="status-gps">GPS: 取得待機中</div>
 </div>
 
@@ -229,6 +251,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#04040e;
 <script type="module">
 import { AudioManager }    from './core/audio.js';
 import { EventEngine }     from './core/event-engine.js';
+import { RoadBackground }  from './core/road-background.js';
 import { GuideCard }       from './contents/guide-card/game.js';
 import { FamilyQuiz }      from './contents/quiz/game.js';
 import { ShortRhythmGame } from './contents/rhythm-short/game.js';
@@ -327,6 +350,7 @@ function saveRadii(map) {
 const configScreen     = document.getElementById('config-screen');
 const configCards      = document.getElementById('config-cards');
 const statusScreen     = document.getElementById('status-screen');
+const statusBgCanvas   = document.getElementById('status-bg');
 const contentContainer = document.getElementById('content-container');
 const statusEventName  = document.getElementById('status-event-name');
 const statusDist       = document.getElementById('status-dist');
@@ -339,9 +363,12 @@ const dbgLog           = document.getElementById('dbg-log');
 
 // ── State ─────────────────────────────────────────────────────────
 const audioManager = new AudioManager();
+const statusBackground = new RoadBackground({ speed: 8 });
 let engine = null;
 let events = [];   // working copy with resolved .radius
 let activeContent  = null;
+
+statusBackground.attach(statusBgCanvas);
 
 // ── Build config cards ────────────────────────────────────────────
 const TYPE_LABELS = {
@@ -472,6 +499,7 @@ function hideContent() {
 // ── START button ──────────────────────────────────────────────────
 document.getElementById('config-start-btn').addEventListener('click', () => {
   audioManager.unlock();
+  statusBackground.start();
 
   // Build events with resolved radii from UI
   events = EVENT_DEFS.map(def => {
@@ -508,7 +536,7 @@ document.getElementById('config-start-btn').addEventListener('click', () => {
       const ev = events[activeIndex];
       statusEventName.textContent = `${ev.icon} ${ev.name}`;
       statusDist.textContent      = '発動中';
-      statusDistUnit.textContent  = '';
+      statusDistUnit.textContent  = '現在このイベントを表示中';
     } else if (nextEvent) {
       statusEventName.textContent = `${nextEvent.icon} ${nextEvent.name}`;
       if (distToNext < 1) {
@@ -522,6 +550,15 @@ document.getElementById('config-start-btn').addEventListener('click', () => {
       statusEventName.textContent = '全イベント完了 🎉';
       statusDist.textContent      = '';
       statusDistUnit.textContent  = '';
+    }
+
+    if (activeIndex < 0 && nextEvent) {
+      if (distToNext < 1) {
+        statusDist.textContent = '0';
+        statusDistUnit.textContent = 'm | ジオフェンス内です';
+      } else {
+        statusDistUnit.textContent = 'm で次のイベントが発動';
+      }
     }
 
     if (engine) updateProgressDots(engine.getEventStates());
