@@ -5,7 +5,7 @@ import { URL } from "node:url";
 import { synthesizeGuide } from "./azure-speech.js";
 
 const ROOT_DIR = path.resolve(".");
-const HOST = process.env.HOST || "127.0.0.1";
+const HOST = process.env.HOST || "0.0.0.0";
 const PORT = Number(process.env.PORT || 3000);
 
 const MIME_TYPES = {

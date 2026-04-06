@@ -18,7 +18,7 @@ AZURE_SPEECH_KEY=your_key
 AZURE_SPEECH_REGION=your_region
 AZURE_SPEECH_VOICE=ja-JP-NanamiNeural
 PORT=3000
-HOST=127.0.0.1
+HOST=0.0.0.0
 ```
 
 `AZURE_SPEECH_VOICE` is optional. If omitted, `ja-JP-NanamiNeural` is used.
@@ -41,6 +41,12 @@ Then open:
 
 ```text
 http://127.0.0.1:3000
+```
+
+From another device on the same network, open:
+
+```text
+http://<your-pc-ip>:3000
 ```
 
 Do not open `index.html` directly from the filesystem if you want Azure TTS. The browser app must be served by the local Node server so it can call `/api/tts-guide`.
