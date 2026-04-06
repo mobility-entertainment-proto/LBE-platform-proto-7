@@ -173,6 +173,16 @@ export class EventEngine {
   }
 
   _notify(data) {
-    if (this.onStatusUpdate) this.onStatusUpdate(data);
+    if (!this.onStatusUpdate) return;
+    this.onStatusUpdate({
+      lat: this._currentLat,
+      lng: this._currentLng,
+      distToNext: Infinity,
+      nextEvent: this.events[this.currentIndex] || null,
+      activeIndex: this.activeIndex,
+      currentIndex: this.currentIndex,
+      totalEvents: this.events.length,
+      ...data,
+    });
   }
 }
