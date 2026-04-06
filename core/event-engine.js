@@ -36,6 +36,12 @@ export class EventEngine {
 
   start(onStatusUpdate) {
     this.onStatusUpdate = onStatusUpdate;
+    this.currentIndex = 0;
+    this.activeIndex = -1;
+    this._debugMode = false;
+    this._currentLat = null;
+    this._currentLng = null;
+    this._notifyStatus();
     this.locationManager.start(
       pos => this._onGpsUpdate(pos),
       err => this._notify({ msg: `GPS エラー: ${err}` })

@@ -551,6 +551,13 @@ document.getElementById('config-start-btn').addEventListener('click', () => {
       statusDistUnit.textContent  = '';
     }
 
+    if (activeIndex < 0 && !nextEvent && currentIndex < totalEvents) {
+      const firstEvent = events[0];
+      statusEventName.textContent = firstEvent ? `${firstEvent.icon} ${firstEvent.name}` : 'NEXT EVENT';
+      statusDist.textContent = '--';
+      statusDistUnit.textContent = 'GPS取得待ち';
+    }
+
     if (activeIndex < 0 && nextEvent) {
       if (distToNext < 1) {
         statusDist.textContent = '0';
