@@ -143,7 +143,7 @@ export class GuideCard {
 
     // TTS読み上げ
     const readText = [d.title, d.body, d.footer].filter(Boolean).join('。');
-    try { await this.audio.speak(readText, { rate: 0.85 }); } catch (_) {}
+    try { await this.audio.speak(readText, { rate: 0.85, audioSrc: d.audioSrc }); } catch (_) {}
   }
 
   onExit() {

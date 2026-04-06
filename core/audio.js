@@ -4,10 +4,8 @@ export class AudioManager {
     this.unlocked = false;
     this.speechSynth = window.speechSynthesis || null;
     this._jaVoice = null;
-    this._ttsAbortController = null;
-    this._activeSource = null;
     this._activeUtterance = null;
-    this.azureTtsEndpoint = "/api/tts-guide";
+    this._narrationAudio = null;
 
     if (this.speechSynth) {
       const loadVoices = () => {
@@ -155,68 +153,52 @@ export class AudioManager {
 
     this.stopSpeech();
 
-    if (this.ctx && this.azureTtsEndpoint) {
+    if (options.audioSrc) {
       try {
-        await this._speakViaAzure(message);
+        await this._playAudioFile(options.audioSrc);
         return;
       } catch (error) {
-        console.warn("[AudioManager] Azure TTS failed, falling back to speechSynthesis.", error);
+        console.warn("[AudioManager] Static narration playback failed, falling back to browser TTS.", error);
       }
     }
 
     await this._speakViaBrowser(message, options);
   }
 
-  async _speakViaAzure(text) {
-    if (!this.ctx) {
-      throw new Error("Audio context is not unlocked.");
-    }
-
-    if (this.ctx.state === "suspended") {
-      await this.ctx.resume();
-    }
-
-    const controller = new AbortController();
-    this._ttsAbortController = controller;
-
-    const response = await fetch(this.azureTtsEndpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      let errorText = `${response.status} ${response.statusText}`;
-      try {
-        const payload = await response.json();
-        if (payload?.error) errorText = payload.error;
-      } catch (_) {}
-      throw new Error(errorText);
-    }
-
-    const arrayBuffer = await response.arrayBuffer();
-    const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer.slice(0));
-
+  _playAudioFile(src) {
     return new Promise((resolve, reject) => {
-      const source = this.ctx.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(this.ctx.destination);
-      this._activeSource = source;
+      const audio = new Audio(src);
+      audio.preload = "auto";
+      audio.crossOrigin = "anonymous";
+      this._narrationAudio = audio;
 
-      source.onended = () => {
-        if (this._activeSource === source) this._activeSource = null;
-        if (this._ttsAbortController === controller) this._ttsAbortController = null;
-        resolve();
+      const cleanup = () => {
+        audio.onended = null;
+        audio.onerror = null;
+        audio.oncanplaythrough = null;
+        if (this._narrationAudio === audio) this._narrationAudio = null;
       };
 
-      try {
-        source.start(0);
-      } catch (error) {
-        if (this._activeSource === source) this._activeSource = null;
-        if (this._ttsAbortController === controller) this._ttsAbortController = null;
+      audio.onended = () => {
+        cleanup();
+        resolve();
+      };
+      audio.onerror = () => {
+        const error = new Error(`Failed to load narration audio: ${src}`);
+        cleanup();
         reject(error);
-      }
+      };
+      audio.oncanplaythrough = async () => {
+        try {
+          if (this.ctx && this.ctx.state === "suspended") await this.ctx.resume();
+          await audio.play();
+        } catch (error) {
+          cleanup();
+          reject(error);
+        }
+      };
+
+      audio.load();
     });
   }
 
@@ -262,14 +244,10 @@ export class AudioManager {
   }
 
   stopSpeech() {
-    if (this._ttsAbortController) {
-      this._ttsAbortController.abort();
-      this._ttsAbortController = null;
-    }
-
-    if (this._activeSource) {
-      try { this._activeSource.stop(0); } catch (_) {}
-      this._activeSource = null;
+    if (this._narrationAudio) {
+      this._narrationAudio.pause();
+      this._narrationAudio.currentTime = 0;
+      this._narrationAudio = null;
     }
 
     if (this.speechSynth) this.speechSynth.cancel();

@@ -1,11 +1,10 @@
 {
-  "name": "lbe-platform-proto-5",
+  "name": "lbe-platform-proto-6",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node server/app.js",
-    "start": "node server/app.js",
+    "generate:guides": "node scripts/generate-guide-audio.js",
     "speak:guide": "node scripts/speak-guide.js"
   },
   "dependencies": {

@@ -1,27 +1,25 @@
-# LBE Platform Proto 5
+# LBE Platform Proto 6
 
-`LBE-platform-proto-5` is the Azure TTS-connected version of the route guide prototype.
+`LBE-platform-proto-6` is the GitHub Pages-friendly version of the route guide prototype.
 
-## What Changed
+## Concept
 
-- `proto-4` remains as a backup.
-- `proto-5` adds a local Node.js server.
-- Guide narration now prefers Azure Speech TTS through `/api/tts-guide`.
-- If the API is unavailable, the browser falls back to `speechSynthesis`.
+- No runtime Node server is required for playback.
+- Guide narration is generated in advance with Azure Speech on your local machine.
+- Generated `.wav` files are committed to the repository and served as static assets.
+- GitHub Pages can host the app because the site is fully static at runtime.
 
 ## Environment
 
-Create `.env.local` in the project root:
+Create `.env.local` in the project root for local audio generation:
 
 ```env
 AZURE_SPEECH_KEY=your_key
 AZURE_SPEECH_REGION=your_region
 AZURE_SPEECH_VOICE=ja-JP-NanamiNeural
-PORT=3000
-HOST=0.0.0.0
 ```
 
-`AZURE_SPEECH_VOICE` is optional. If omitted, `ja-JP-NanamiNeural` is used.
+These values are only used when generating guide audio locally. They are not needed on GitHub Pages.
 
 ## Install
 
@@ -29,38 +27,30 @@ HOST=0.0.0.0
 npm.cmd install
 ```
 
-## Run Proto 5
+## Generate Guide Audio
 
-Start the local server:
-
-```bash
-npm.cmd run dev
-```
-
-Then open:
-
-```text
-http://127.0.0.1:3000
-```
-
-From another device on the same network, open:
-
-```text
-http://<your-pc-ip>:3000
-```
-
-Do not open `index.html` directly from the filesystem if you want Azure TTS. The browser app must be served by the local Node server so it can call `/api/tts-guide`.
-
-## Azure TTS Test Script
-
-You can still generate a guide wav directly:
+This creates fixed guide narration files for the route events.
 
 ```bash
-npm.cmd run speak:guide -- "今日はお台場の日本科学未来館へ向かいます。"
+npm.cmd run generate:guides
 ```
 
-This saves:
+Generated files are written to:
 
 ```text
-tmp/tts/guide-output.wav
+assets/audio/guides/
 ```
+
+## Preview Locally
+
+You can open `index.html` directly for basic checking, but for mobile testing use any static file server or GitHub Pages so the site is served over HTTP or HTTPS as needed.
+
+## Deploy
+
+Push the repository to GitHub and publish with GitHub Pages.
+
+At runtime:
+
+- the app loads static audio from `assets/audio/guides/`
+- no Azure key is exposed
+- no Node server is required

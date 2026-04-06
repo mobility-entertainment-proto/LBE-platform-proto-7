@@ -97,17 +97,17 @@ export async function synthesizeGuide(text) {
   return synthesizeText(guideText);
 }
 
-export async function speakGuide(text) {
+export async function saveGuideAudio(text, outputPath) {
   const guideText = validateGuideText(text);
   const { audioData, voice, format } = await synthesizeText(guideText);
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  fs.writeFileSync(outputPath, audioData);
+  return { outputPath, voice, format };
+}
 
+export async function speakGuide(text) {
+  const guideText = validateGuideText(text);
   fs.mkdirSync(DEFAULT_OUTPUT_DIR, { recursive: true });
   const outputPath = path.join(DEFAULT_OUTPUT_DIR, DEFAULT_OUTPUT_FILE);
-  fs.writeFileSync(outputPath, audioData);
-
-  return {
-    outputPath,
-    voice,
-    format,
-  };
+  return saveGuideAudio(guideText, outputPath);
 }
