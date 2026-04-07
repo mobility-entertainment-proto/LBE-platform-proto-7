@@ -17,6 +17,7 @@ export class GuideCard {
     this._data         = {};
     this._exited       = false;
     this._countdownTimer = null;
+    this._autoCloseTimer = null;
     this._rafId        = null;
     this._boundLoop    = this._loop.bind(this);
     this._boundResize  = this._onResize.bind(this);
@@ -106,7 +107,7 @@ export class GuideCard {
       font-weight:bold;cursor:pointer;letter-spacing:2px;
       touch-action:manipulation;
     `;
-    this._closeBtn.textContent = '✓  わかった';
+    this._closeBtn.textContent = 'わかった';
     this._closeBtn.addEventListener('click', () => this._onClose());
     this._card.appendChild(this._closeBtn);
 
@@ -122,6 +123,7 @@ export class GuideCard {
     const d = event.contentData || {};
     this._data   = d;
     this._exited = false;
+    if (this._autoCloseTimer) { clearTimeout(this._autoCloseTimer); this._autoCloseTimer = null; }
 
     this._iconEl.textContent  = d.icon  || (d.countdown ? '🌉' : '🗺️');
     this._titleEl.textContent = d.title || '';
@@ -144,12 +146,15 @@ export class GuideCard {
     // TTS読み上げ
     const readText = [d.title, d.body, d.footer].filter(Boolean).join('。');
     try { await this.audio.speak(readText, { rate: 0.85, audioSrc: d.audioSrc }); } catch (_) {}
+    if (this._exited) return;
+    this._autoCloseTimer = setTimeout(() => this._complete(), 5000);
   }
 
   onExit() {
     this._exited = true;
     this.audio.stopSpeech();
     if (this._countdownTimer) { clearTimeout(this._countdownTimer); this._countdownTimer = null; }
+    if (this._autoCloseTimer) { clearTimeout(this._autoCloseTimer); this._autoCloseTimer = null; }
     if (this._rafId) { cancelAnimationFrame(this._rafId); this._rafId = null; }
     window.removeEventListener('resize', this._boundResize);
   }
@@ -233,34 +238,7 @@ export class GuideCard {
 
   _onClose() {
     this.audio.stopSpeech();
-    if (this._data.countdown) {
-      this._startCountdown();
-    } else {
-      this._complete();
-    }
-  }
-
-  _startCountdown() {
-    this._closeBtn.style.display = 'none';
-    this._countdownEl.style.display = 'block';
-    let count = 3;
-    this._countdownEl.textContent = count;
-
-    const tick = () => {
-      if (this._exited) return;
-      count--;
-      if (count <= 0) {
-        this._countdownEl.textContent = '🎵';
-        this._countdownTimer = setTimeout(() => this._complete(), 400);
-      } else {
-        this._countdownEl.textContent = count;
-        try { this.audio.playSFX(count === 2 ? 'count2' : 'count1'); } catch (_) {}
-        this._countdownTimer = setTimeout(tick, 1000);
-      }
-    };
-
-    try { this.audio.playSFX('count3'); } catch (_) {}
-    this._countdownTimer = setTimeout(tick, 1000);
+    this._complete();
   }
 
   _complete() {

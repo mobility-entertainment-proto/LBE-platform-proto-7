@@ -2,6 +2,9 @@ const CHOICE_COLORS = ['#ff8a65', '#4dd0e1', '#81c784', '#ba68c8'];
 const CHOICE_BG = ['rgba(90,26,8,0.82)', 'rgba(10,74,85,0.82)', 'rgba(42,85,48,0.82)', 'rgba(58,16,80,0.82)'];
 const TIMER_MS = 20000;
 const POST_READ_DELAY_MS = 1200;
+const QUIZ_INTRO_TEXT = 'じゃじゃん、ここでクイズです！';
+const TEN_SECONDS_TEXT = 'あと10秒';
+const FIVE_SECONDS_TEXT = 'あと5秒';
 
 export class FamilyQuiz {
   constructor(audioManager) {
@@ -35,6 +38,9 @@ export class FamilyQuiz {
     this._countdownStart = 0;
     this._countdownTimer = null;
     this._resultTimer = null;
+    this._announced10 = false;
+    this._announced5 = false;
+    this._lastCountdownSecond = null;
     this._exited = false;
     this._rafId = null;
     this._boundLoop = this._loop.bind(this);
@@ -85,6 +91,9 @@ export class FamilyQuiz {
     this._choiceRects = [];
     this._btnList = [];
     this._introUntil = performance.now() + 1100;
+    this._announced10 = false;
+    this._announced5 = false;
+    this._lastCountdownSecond = null;
     if (this._countdownTimer) clearTimeout(this._countdownTimer);
     if (this._resultTimer) clearTimeout(this._resultTimer);
 
@@ -201,6 +210,8 @@ export class FamilyQuiz {
 
   async _startQuestion() {
     this._state = 'READING';
+    try { await this.audio?.speak(QUIZ_INTRO_TEXT, { rate: 0.95 }); } catch (_) {}
+    if (this._exited) return;
     const prompt = `${this._question.question}`;
     try { await this.audio?.speak(prompt, { rate: 0.92 }); } catch (_) {}
     if (this._exited) return;
@@ -255,6 +266,31 @@ export class FamilyQuiz {
   _update() {
     if (this._state === 'INTRO' && performance.now() >= this._introUntil) {
       this._startQuestion();
+      return;
+    }
+
+    if (this._state === 'CHOOSING') {
+      const remainMs = Math.max(0, TIMER_MS - (performance.now() - this._countdownStart));
+      const remainSec = Math.ceil(remainMs / 1000);
+
+      if (!this._announced10 && remainMs <= 10000) {
+        this._announced10 = true;
+        this.audio?.speak(TEN_SECONDS_TEXT, { rate: 1.0 });
+      }
+
+      if (!this._announced5 && remainMs <= 5000) {
+        this._announced5 = true;
+        this.audio?.speak(FIVE_SECONDS_TEXT, { rate: 1.0 });
+      }
+
+      if (remainSec < 5 && remainSec > 0 && remainSec !== this._lastCountdownSecond) {
+        this._lastCountdownSecond = remainSec;
+        try {
+          if (remainSec >= 4) this.audio?.playSFX('count3');
+          else if (remainSec >= 2) this.audio?.playSFX('count2');
+          else this.audio?.playSFX('count1');
+        } catch (_) {}
+      }
     }
   }
 

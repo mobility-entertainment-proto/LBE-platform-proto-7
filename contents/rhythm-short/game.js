@@ -3,6 +3,8 @@
 //                   ノーツを20秒分に絞り、終了後に endMessage を表示する版
 
 import { loadSongConfig } from '../../core/song-config.js';
+const RESULT_NARRATION = '楽しかったですか？結果はこちらです。今度は激むずバージョンもやってみてね。';
+const CLOSING_NARRATION = 'そろそろ目的につきます。楽しんで来てくださいね！ありがとうございました！アフィーラでした。忘れないでね。';
 
 const LIMIT_MS = 20000; // 20秒で強制終了
 
@@ -40,6 +42,8 @@ export class ShortRhythmGame {
     this.entryFxTimers = [];
     // End message
     this._endMessage = '';
+    this._resultNarrationSpoken = false;
+    this._finishing = false;
     this._exited = false;
     // RAF
     this._rafId = null;
@@ -66,6 +70,8 @@ export class ShortRhythmGame {
     this._exited = false;
     const d = event.contentData || {};
     this._endMessage = d.endMessage || '';
+    this._resultNarrationSpoken = false;
+    this._finishing = false;
 
     if (!this.chart) {
       const conf = await loadSongConfig();
@@ -98,6 +104,7 @@ export class ShortRhythmGame {
     if (this._rafId) { cancelAnimationFrame(this._rafId); this._rafId = null; }
     window.removeEventListener('resize', this._boundResize);
     if (this.audioEl) { this.audioEl.pause(); this.audioEl = null; }
+    this.audio?.stopSpeech();
     this.entryAnim = false;
     if (this.entryTimerId) { clearTimeout(this.entryTimerId); this.entryTimerId = null; }
     if (this.earlyAudioTimerId) { clearTimeout(this.earlyAudioTimerId); this.earlyAudioTimerId = null; }
@@ -576,6 +583,10 @@ export class ShortRhythmGame {
   _drawResult() {
     this.btnList = [];
     const c = this.ctx;
+    if (!this._resultNarrationSpoken) {
+      this._resultNarrationSpoken = true;
+      this.audio?.speak(RESULT_NARRATION, { rate: 0.92 });
+    }
     c.fillStyle='rgba(4,4,20,0.92)'; c.fillRect(0,0,this.W,this.H);
 
     c.fillStyle='#ffd700'; c.shadowColor='#ff8800'; c.shadowBlur=20;
@@ -614,7 +625,11 @@ export class ShortRhythmGame {
     }
 
     const bh=Math.min(this.H*.09,52), bw=Math.min(this.W*.42,220);
-    this._drawBtn('つぎへ ▶', this.cx, this.H*.88, bw, bh, '#0e1a30', '#66ccff', () => {
+    this._drawBtn('終了', this.cx, this.H*.88, bw, bh, '#0e1a30', '#66ccff', async () => {
+      if (this._finishing) return;
+      this._finishing = true;
+      this.audio?.stopSpeech();
+      try { await this.audio?.speak(CLOSING_NARRATION, { rate: 0.92 }); } catch (_) {}
       if (this.onComplete) this.onComplete();
     });
   }
@@ -624,6 +639,7 @@ export class ShortRhythmGame {
   _onInput(cx, cy) {
     this._initActx();
     if (this.gs === this.GS.RESULT) {
+      if (this._finishing) return;
       for (const b of this.btnList) if(cx>=b.x&&cx<=b.x+b.w&&cy>=b.y&&cy<=b.y+b.h){ b.cb(); return; }
       return;
     }
