@@ -27,6 +27,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:#04040e;
 }
 #config-route{font-size:12px;color:#88aacc;letter-spacing:2px;margin-bottom:4px;}
 #config-subtitle{font-size:11px;color:#334;letter-spacing:2px;margin-bottom:24px;}
+#config-gps-status{
+  width:100%;max-width:520px;
+  margin-bottom:14px;padding:10px 12px;
+  background:#0a0f1f;border:1px solid #223252;border-radius:10px;
+  color:#88aacc;font-size:12px;letter-spacing:1px;text-align:center;
+}
 
 .ev-card{
   width:100%;max-width:520px;
@@ -204,6 +210,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#04040e;
   <div id="config-title">BUS GUIDE LBE</div>
   <div id="config-route">飯倉 → 首都高C1〜B → お台場</div>
   <div id="config-subtitle">LOCATION BASED ENTERTAINMENT</div>
+  <div id="config-gps-status">GPS: 設定画面で位置情報を確認中...</div>
   <div id="config-cards"></div>
   <button id="config-start-btn">▶ START</button>
 </div>
@@ -354,9 +361,46 @@ function saveRadii(map) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(map)); } catch(_) {}
 }
 
+function updateConfigGpsStatus(text, tone = 'default') {
+  if (!configGpsStatus) return;
+  configGpsStatus.textContent = text;
+  configGpsStatus.style.color =
+    tone === 'ok' ? '#9fe3b1' :
+    tone === 'warn' ? '#ffd37a' :
+    tone === 'error' ? '#ff9c9c' :
+    '#88aacc';
+}
+
+function requestGpsPreflight() {
+  if (gpsPreflightRequested) return;
+  gpsPreflightRequested = true;
+
+  if (!navigator.geolocation) {
+    updateConfigGpsStatus('GPS: このブラウザでは位置情報を利用できません', 'error');
+    return;
+  }
+
+  updateConfigGpsStatus('GPS: 位置情報の許可を確認してください', 'warn');
+
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      updateConfigGpsStatus(
+        `GPS: 許可済み ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`,
+        'ok'
+      );
+    },
+    err => {
+      const detail = err?.message ? ` (${err.message})` : '';
+      updateConfigGpsStatus(`GPS: 許可待ちまたは取得失敗${detail}`, 'warn');
+    },
+    { enableHighAccuracy: true, maximumAge: 0, timeout: 12000 }
+  );
+}
+
 // ── DOM refs ──────────────────────────────────────────────────────
 const configScreen     = document.getElementById('config-screen');
 const configCards      = document.getElementById('config-cards');
+const configGpsStatus  = document.getElementById('config-gps-status');
 const statusScreen     = document.getElementById('status-screen');
 const statusBgCanvas   = document.getElementById('status-bg');
 const contentContainer = document.getElementById('content-container');
@@ -376,6 +420,7 @@ let engine = null;
 let events = [];   // working copy with resolved .radius
 let activeContent  = null;
 let lastStatus = null;
+let gpsPreflightRequested = false;
 
 statusBackground.attach(statusBgCanvas);
 
@@ -477,6 +522,8 @@ function buildProgressDots() {
   }
 }
 buildProgressDots();
+requestGpsPreflight();
+configScreen.addEventListener('pointerdown', requestGpsPreflight, { once: true });
 
 function updateProgressDots(states) {
   states.forEach((s, i) => {
