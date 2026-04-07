@@ -1,6 +1,7 @@
 const CHOICE_COLORS = ['#ff8a65', '#4dd0e1', '#81c784', '#ba68c8'];
 const CHOICE_BG = ['rgba(90,26,8,0.82)', 'rgba(10,74,85,0.82)', 'rgba(42,85,48,0.82)', 'rgba(58,16,80,0.82)'];
-const TIMER_MS = 10000;
+const TIMER_MS = 20000;
+const POST_READ_DELAY_MS = 1200;
 
 export class FamilyQuiz {
   constructor(audioManager) {
@@ -203,6 +204,8 @@ export class FamilyQuiz {
     const prompt = `${this._question.question}`;
     try { await this.audio?.speak(prompt, { rate: 0.92 }); } catch (_) {}
     if (this._exited) return;
+    await new Promise(resolve => setTimeout(resolve, POST_READ_DELAY_MS));
+    if (this._exited) return;
     this._startChoicePhase();
   }
 
@@ -300,7 +303,7 @@ export class FamilyQuiz {
 
   _drawChoosing() {
     const c = this.ctx;
-    this._drawQuestionPanel('FAMILY QUIZ', this._question?.question || '', '10秒後に今の選択で判定します');
+    this._drawQuestionPanel('FAMILY QUIZ', this._question?.question || '', '20秒後に今の選択で判定します');
 
     const remain = Math.max(0, TIMER_MS - (performance.now() - this._countdownStart));
     c.fillStyle = '#ffdd66';
