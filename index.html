@@ -340,6 +340,12 @@ const EVENT_DEFS = [
 ];
 
 // ── localStorage ─────────────────────────────────────────────────
+const START_ANNOUNCEMENT = {
+  title: 'AFEELA GUIDE',
+  text: 'こんにちは！私はアフィーラ。今日の目的地はお台場の科学未来館ですね。私が目的地までガイドさせてもらいます！途中でクイズやゲームがあるのでお楽しみに！',
+  audioSrc: 'assets/audio/guides/start_announcement.wav',
+};
+
 const LS_KEY = 'lbe4_event_radii';
 function loadRadii() {
   try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch(_) { return {}; }
@@ -369,6 +375,7 @@ const statusBackground = new RoadBackground({ speed: 8 });
 let engine = null;
 let events = [];   // working copy with resolved .radius
 let activeContent  = null;
+let lastStatus = null;
 
 statusBackground.attach(statusBgCanvas);
 
@@ -481,6 +488,13 @@ function updateProgressDots(states) {
   });
 }
 
+function resetProgressDots() {
+  for (let i = 0; i < EVENT_DEFS.length; i++) {
+    const dot = document.getElementById(`sp-dot-${i}`);
+    if (dot) dot.className = 'sp-dot';
+  }
+}
+
 // ── Show / hide content ───────────────────────────────────────────
 function showContent(contentType) {
   for (const el of contentContainer.children) el.style.display = 'none';
@@ -498,9 +512,103 @@ function hideContent() {
   activeContent = null;
 }
 
+function renderStatusData({ lat, lng, distToNext, nextEvent, activeIndex, currentIndex, totalEvents }) {
+  statusGps.textContent = lat != null
+    ? `GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`
+    : 'GPS: 取得待機中';
+
+  if (activeIndex >= 0) {
+    const ev = events[activeIndex];
+    statusEventName.textContent = `${ev.icon} ${ev.name}`;
+    statusDist.textContent = '発動中';
+    statusDistUnit.textContent = '現在このイベントを表示中';
+  } else if (nextEvent) {
+    statusEventName.textContent = `${nextEvent.icon} ${nextEvent.name}`;
+    if (distToNext < 1) {
+      statusDist.textContent = 'エリア内';
+      statusDistUnit.textContent = '';
+    } else {
+      statusDist.textContent = distToNext.toFixed(0);
+      statusDistUnit.textContent = 'm まで';
+    }
+  } else {
+    statusEventName.textContent = '全イベント完了';
+    statusDist.textContent = '';
+    statusDistUnit.textContent = '';
+  }
+
+  if (activeIndex < 0 && !nextEvent && currentIndex < totalEvents) {
+    const firstEvent = events[0];
+    statusEventName.textContent = firstEvent ? `${firstEvent.icon} ${firstEvent.name}` : 'NEXT EVENT';
+    statusDist.textContent = '--';
+    statusDistUnit.textContent = 'GPS取得待ち';
+  }
+
+  if (activeIndex < 0 && nextEvent) {
+    if (distToNext < 1) {
+      statusDist.textContent = '0';
+      statusDistUnit.textContent = 'm | ジオフェンス内です';
+    } else {
+      statusDistUnit.textContent = 'm で次のイベントが発動';
+    }
+  }
+
+  if (engine) updateProgressDots(engine.getEventStates());
+
+  const latStr = lat != null ? lat.toFixed(6) : '—';
+  const lngStr = lng != null ? lng.toFixed(6) : '—';
+  const distStr = distToNext < Infinity ? `${distToNext.toFixed(0)}m` : '—';
+  const nextName = currentIndex < totalEvents ? events[currentIndex]?.name : '(全完了)';
+  dbgGps.textContent = `${latStr}, ${lngStr}\n次まで: ${distStr} | 待ち[${currentIndex}/${totalEvents}]: ${nextName}`;
+
+  if (document.getElementById('debug-panel').classList.contains('open')) {
+    _updateDebugEvents();
+  }
+  _updateDebugLog();
+}
+
+function renderStartAnnouncementStatus() {
+  statusEventName.textContent = START_ANNOUNCEMENT.title;
+  statusDist.textContent = '';
+  statusDistUnit.textContent = '出発アナウンスを再生中';
+  statusGps.textContent = 'GPS: ガイド開始前';
+  resetProgressDots();
+  dbgGps.textContent = '出発アナウンスを再生中';
+  _updateDebugLog();
+}
+
+function setupEngineAndStart() {
+  engine = new EventEngine(events);
+  lastStatus = null;
+
+  engine.onEventFire = (ev) => {
+    const content = contentRegistry[ev.contentType];
+    if (!content) return;
+    content.onComplete = () => {
+      engine.markComplete();
+      hideContent();
+    };
+    showContent(ev.contentType);
+    content.onEnter(ev);
+  };
+
+  engine.onEventExit = (ev) => {
+    const content = contentRegistry[ev.contentType];
+    if (content?.onExit) content.onExit();
+  };
+
+  engine.start((data) => {
+    lastStatus = data;
+    renderStatusData(data);
+  });
+
+  _updateDebugEvents();
+}
+
 // ── START button ──────────────────────────────────────────────────
-document.getElementById('config-start-btn').addEventListener('click', () => {
+document.getElementById('config-start-btn').addEventListener('click', async () => {
   audioManager.unlock();
+  audioManager.stopSpeech();
   statusBackground.start();
 
   // Build events with resolved radii from UI
@@ -528,7 +636,22 @@ document.getElementById('config-start-btn').addEventListener('click', () => {
     if (content?.onExit) content.onExit();
   };
 
+  configScreen.classList.add('hidden');
+  statusScreen.classList.remove('hidden');
+  renderStartAnnouncementStatus();
+
+  try {
+    await audioManager.speak(START_ANNOUNCEMENT.text, {
+      rate: 0.9,
+      audioSrc: START_ANNOUNCEMENT.audioSrc,
+    });
+  } catch (_) {}
+
   engine.start(({ msg, lat, lng, distToNext, nextEvent, activeIndex, currentIndex, totalEvents }) => {
+    lastStatus = { msg, lat, lng, distToNext, nextEvent, activeIndex, currentIndex, totalEvents };
+    renderStatusData(lastStatus);
+    return;
+
     // Status screen
     statusGps.textContent = lat != null
       ? `GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`

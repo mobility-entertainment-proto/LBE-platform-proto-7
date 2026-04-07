@@ -1,6 +1,6 @@
-# LBE Platform Proto 6
+# LBE Platform Proto 7
 
-`LBE-platform-proto-6` is the GitHub Pages-friendly version of the route guide prototype.
+`LBE-platform-proto-7` is the GitHub Pages-friendly version of the route guide prototype.
 
 ## Concept
 
@@ -8,6 +8,7 @@
 - Guide narration is generated in advance with Azure Speech on your local machine.
 - Generated `.wav` files are committed to the repository and served as static assets.
 - GitHub Pages can host the app because the site is fully static at runtime.
+- A start announcement plays first, then normal geofence waiting begins.
 
 ## Environment
 

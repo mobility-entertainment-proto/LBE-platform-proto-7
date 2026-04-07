@@ -1,5 +1,10 @@
 [
   {
+    "id": "start_announcement",
+    "file": "assets/audio/guides/start_announcement.wav",
+    "text": "こんにちは！私はアフィーラ。今日の目的地はお台場の科学未来館ですね。私が目的地までガイドさせてもらいます！途中でクイズやゲームがあるのでお楽しみに！"
+  },
+  {
     "id": "event_intro_miraikan",
     "file": "assets/audio/guides/event_intro_miraikan.wav",
     "text": "今日の目的地は科学未来館。今日はお台場の日本科学未来館へ向かいます。未来館には、地球を映し出す大きなシンボル展示、ジオ・コスモスがあります。到着したら、家族で、いちばん未来っぽいと思った展示をひとつ決めてみましょう。"
