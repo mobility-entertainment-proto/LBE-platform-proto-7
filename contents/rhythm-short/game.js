@@ -5,6 +5,7 @@
 import { loadSongConfig } from '../../core/song-config.js';
 const RESULT_NARRATION = '楽しかったですか？結果はこちらです。今度は激むずバージョンもやってみてね。';
 const CLOSING_NARRATION = 'そろそろ目的につきます。楽しんで来てくださいね！ありがとうございました！アフィーラでした。忘れないでね。';
+const CLOSING_AUDIO = 'assets/audio/guides/rhythm_closing.wav';
 
 const LIMIT_MS = 20000; // 20秒で強制終了
 
@@ -629,7 +630,7 @@ export class ShortRhythmGame {
       if (this._finishing) return;
       this._finishing = true;
       this.audio?.stopSpeech();
-      try { await this.audio?.speak(CLOSING_NARRATION, { rate: 0.92 }); } catch (_) {}
+      try { await this.audio?.speak(CLOSING_NARRATION, { rate: 0.92, audioSrc: CLOSING_AUDIO }); } catch (_) {}
       if (this.onComplete) this.onComplete();
     });
   }

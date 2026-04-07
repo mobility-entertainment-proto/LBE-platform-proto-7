@@ -26,6 +26,14 @@ function validateGuideText(text) {
   return guideText;
 }
 
+function validateGuideSsml(ssml) {
+  const guideSsml = String(ssml ?? "").trim();
+  if (!guideSsml) {
+    throw new Error("[Azure Speech] synthesizeGuide requires a non-empty ssml string.");
+  }
+  return guideSsml;
+}
+
 function createSpeechConfig() {
   let key;
   let region;
@@ -92,14 +100,65 @@ function synthesizeText(guideText) {
   });
 }
 
+function synthesizeSsml(guideSsml) {
+  const speechConfig = createSpeechConfig();
+  const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
+
+  return new Promise((resolve, reject) => {
+    synthesizer.speakSsmlAsync(
+      guideSsml,
+      (result) => {
+        try {
+          if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
+            resolve({
+              audioData: Buffer.from(result.audioData),
+              voice: speechConfig.speechSynthesisVoiceName,
+              format: "audio/wav",
+            });
+            return;
+          }
+
+          const details = sdk.CancellationDetails.fromResult(result);
+          reject(
+            new Error(
+              `[Azure Speech] Speech synthesis failed: ${details.reason}${
+                details.errorDetails ? ` | ${details.errorDetails}` : ""
+              }`
+            )
+          );
+        } finally {
+          synthesizer.close();
+        }
+      },
+      (error) => {
+        synthesizer.close();
+        reject(new Error(`[Azure Speech] SDK error: ${error}`));
+      }
+    );
+  });
+}
+
 export async function synthesizeGuide(text) {
   const guideText = validateGuideText(text);
   return synthesizeText(guideText);
 }
 
+export async function synthesizeGuideSsml(ssml) {
+  const guideSsml = validateGuideSsml(ssml);
+  return synthesizeSsml(guideSsml);
+}
+
 export async function saveGuideAudio(text, outputPath) {
   const guideText = validateGuideText(text);
   const { audioData, voice, format } = await synthesizeText(guideText);
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  fs.writeFileSync(outputPath, audioData);
+  return { outputPath, voice, format };
+}
+
+export async function saveGuideAudioSsml(ssml, outputPath) {
+  const guideSsml = validateGuideSsml(ssml);
+  const { audioData, voice, format } = await synthesizeSsml(guideSsml);
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, audioData);
   return { outputPath, voice, format };

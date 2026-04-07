@@ -3,6 +3,7 @@ const CHOICE_BG = ['rgba(90,26,8,0.82)', 'rgba(10,74,85,0.82)', 'rgba(42,85,48,0
 const TIMER_MS = 20000;
 const POST_READ_DELAY_MS = 1200;
 const QUIZ_INTRO_TEXT = 'じゃじゃん、ここでクイズです！';
+const QUIZ_INTRO_AUDIO = 'assets/audio/guides/quiz_intro.wav';
 const TEN_SECONDS_TEXT = 'あと10秒';
 const FIVE_SECONDS_TEXT = 'あと5秒';
 
@@ -210,7 +211,7 @@ export class FamilyQuiz {
 
   async _startQuestion() {
     this._state = 'READING';
-    try { await this.audio?.speak(QUIZ_INTRO_TEXT, { rate: 0.95 }); } catch (_) {}
+    try { await this.audio?.speak(QUIZ_INTRO_TEXT, { rate: 0.95, audioSrc: QUIZ_INTRO_AUDIO }); } catch (_) {}
     if (this._exited) return;
     const prompt = `${this._question.question}`;
     try { await this.audio?.speak(prompt, { rate: 0.92 }); } catch (_) {}
@@ -283,11 +284,11 @@ export class FamilyQuiz {
         this.audio?.speak(FIVE_SECONDS_TEXT, { rate: 1.0 });
       }
 
-      if (remainSec < 5 && remainSec > 0 && remainSec !== this._lastCountdownSecond) {
+      if (remainSec <= 15 && remainSec > 0 && remainSec !== this._lastCountdownSecond) {
         this._lastCountdownSecond = remainSec;
         try {
-          if (remainSec >= 4) this.audio?.playSFX('count3');
-          else if (remainSec >= 2) this.audio?.playSFX('count2');
+          if (remainSec >= 10) this.audio?.playSFX('count3');
+          else if (remainSec >= 5) this.audio?.playSFX('count2');
           else this.audio?.playSFX('count1');
         } catch (_) {}
       }
