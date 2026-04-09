@@ -6,6 +6,7 @@ export class AudioManager {
     this._jaVoice = null;
     this._activeUtterance = null;
     this._narrationAudio = null;
+    this._narrationPlayback = null;
 
     if (this.speechSynth) {
       const loadVoices = () => {
@@ -171,28 +172,40 @@ export class AudioManager {
       audio.preload = "auto";
       audio.crossOrigin = "anonymous";
       this._narrationAudio = audio;
+      const playback = { cancelled: false, finish: null };
+      this._narrationPlayback = playback;
 
       const cleanup = () => {
         audio.onended = null;
         audio.onerror = null;
         audio.oncanplaythrough = null;
         if (this._narrationAudio === audio) this._narrationAudio = null;
+        if (this._narrationPlayback === playback) this._narrationPlayback = null;
       };
-
-      audio.onended = () => {
+      playback.finish = () => {
+        if (playback.cancelled) return;
+        playback.cancelled = true;
         cleanup();
         resolve();
       };
+
+      audio.onended = () => {
+        playback.finish();
+      };
       audio.onerror = () => {
+        if (playback.cancelled) return;
         const error = new Error(`Failed to load narration audio: ${src}`);
+        playback.cancelled = true;
         cleanup();
         reject(error);
       };
       audio.oncanplaythrough = async () => {
+        if (playback.cancelled) return;
         try {
           if (this.ctx && this.ctx.state === "suspended") await this.ctx.resume();
           await audio.play();
         } catch (error) {
+          playback.cancelled = true;
           cleanup();
           reject(error);
         }
@@ -244,11 +257,18 @@ export class AudioManager {
   }
 
   stopSpeech() {
-    if (this._narrationAudio) {
-      this._narrationAudio.pause();
-      this._narrationAudio.currentTime = 0;
-      this._narrationAudio = null;
+    const narrationAudio = this._narrationAudio;
+    const narrationPlayback = this._narrationPlayback;
+
+    if (narrationAudio) {
+      narrationAudio.pause();
+      try {
+        narrationAudio.currentTime = 0;
+      } catch (_) {}
     }
+    if (narrationPlayback?.finish) narrationPlayback.finish();
+    this._narrationAudio = null;
+    this._narrationPlayback = null;
 
     if (this.speechSynth) this.speechSynth.cancel();
     this._activeUtterance = null;
