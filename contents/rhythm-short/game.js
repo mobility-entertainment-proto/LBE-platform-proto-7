@@ -3,7 +3,7 @@
 //                   ノーツを20秒分に絞り、終了後に endMessage を表示する版
 
 import { loadSongConfig } from '../../core/song-config.js';
-const RESULT_NARRATION = '楽しかったですか？結果はこちらです。今度は激むずバージョンもやってみてね。';
+const RESULT_NARRATION = '結果はこちらです？楽しかったですか？今度は激むずバージョンをやってみてね。無理だろうけど。';
 const CLOSING_NARRATION = 'そろそろ目的につきます。楽しんで来てくださいね！ありがとうございました！アフィーラでした。忘れないでね。';
 const CLOSING_AUDIO = 'assets/audio/guides/rhythm_closing.wav';
 
@@ -45,6 +45,7 @@ export class ShortRhythmGame {
     this._endMessage = '';
     this._resultNarrationSpoken = false;
     this._finishing = false;
+    this._pendingAfterCompleteNarration = null;
     this._exited = false;
     // RAF
     this._rafId = null;
@@ -73,6 +74,7 @@ export class ShortRhythmGame {
     this._endMessage = d.endMessage || '';
     this._resultNarrationSpoken = false;
     this._finishing = false;
+    this._pendingAfterCompleteNarration = null;
 
     if (!this.chart) {
       const conf = await loadSongConfig();
@@ -606,36 +608,26 @@ export class ShortRhythmGame {
     });
 
     // エンドメッセージ
-    if (this._endMessage) {
-      const mx = this.W*0.05, mw = this.W*0.9;
-      const my = this.H*0.63, mh = this.H*0.18;
-      c.fillStyle='rgba(0,30,60,0.75)';
-      this._rr(mx, my, mw, mh, 12); c.fill();
-      c.strokeStyle='rgba(85,170,255,0.5)'; c.lineWidth=1.5;
-      this._rr(mx, my, mw, mh, 12); c.stroke();
-      c.fillStyle='#88ccff'; c.font=`${this.H*.028|0}px sans-serif`; c.textAlign='center';
-      const lh = this.H * 0.04;
-      let line = '', y = my + mh * 0.38;
-      for (const ch of this._endMessage.split('')) {
-        const test = line + ch;
-        if (c.measureText(test).width > mw * 0.88 && line !== '') {
-          c.fillText(line, this.cx, y); y += lh; line = ch;
-        } else { line = test; }
-      }
-      if (line) c.fillText(line, this.cx, y);
-    }
-
     const bh=Math.min(this.H*.09,52), bw=Math.min(this.W*.42,220);
-    this._drawBtn('終了', this.cx, this.H*.88, bw, bh, '#0e1a30', '#66ccff', async () => {
+    this._drawBtn('\u7d42\u4e86', this.cx, this.H*.88, bw, bh, '#0e1a30', '#66ccff', () => {
       if (this._finishing) return;
       this._finishing = true;
       this.audio?.stopSpeech();
-      try { await this.audio?.speak(CLOSING_NARRATION, { rate: 0.92, audioSrc: CLOSING_AUDIO }); } catch (_) {}
+      this._pendingAfterCompleteNarration = {
+        text: CLOSING_NARRATION,
+        rate: 0.92,
+        audioSrc: CLOSING_AUDIO,
+      };
       if (this.onComplete) this.onComplete();
     });
   }
 
-  // ── Input ─────────────────────────────────────────────────────
+  consumeAfterCompleteNarration() {
+    const narration = this._pendingAfterCompleteNarration;
+    this._pendingAfterCompleteNarration = null;
+    return narration;
+  }
+
 
   _onInput(cx, cy) {
     this._initActx();

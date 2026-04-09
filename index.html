@@ -632,8 +632,18 @@ function setupEngineAndStart() {
     const content = contentRegistry[ev.contentType];
     if (!content) return;
     content.onComplete = () => {
+      const afterCompleteNarration =
+        typeof content.consumeAfterCompleteNarration === 'function'
+          ? content.consumeAfterCompleteNarration()
+          : null;
       engine.markComplete();
       hideContent();
+      if (afterCompleteNarration) {
+        audioManager.speak(afterCompleteNarration.text, {
+          rate: afterCompleteNarration.rate || 0.9,
+          audioSrc: afterCompleteNarration.audioSrc,
+        });
+      }
     };
     showContent(ev.contentType);
     content.onEnter(ev);
@@ -671,8 +681,18 @@ document.getElementById('config-start-btn').addEventListener('click', async () =
     const content = contentRegistry[ev.contentType];
     if (!content) return;
     content.onComplete = () => {
+      const afterCompleteNarration =
+        typeof content.consumeAfterCompleteNarration === 'function'
+          ? content.consumeAfterCompleteNarration()
+          : null;
       engine.markComplete();
       hideContent();
+      if (afterCompleteNarration) {
+        audioManager.speak(afterCompleteNarration.text, {
+          rate: afterCompleteNarration.rate || 0.9,
+          audioSrc: afterCompleteNarration.audioSrc,
+        });
+      }
     };
     showContent(ev.contentType);
     content.onEnter(ev);

@@ -16,6 +16,7 @@ export class GuideCard {
     // State
     this._data         = {};
     this._exited       = false;
+    this._completed    = false;
     this._countdownTimer = null;
     this._autoCloseTimer = null;
     this._rafId        = null;
@@ -123,6 +124,7 @@ export class GuideCard {
     const d = event.contentData || {};
     this._data   = d;
     this._exited = false;
+    this._completed = false;
     if (this._autoCloseTimer) { clearTimeout(this._autoCloseTimer); this._autoCloseTimer = null; }
 
     this._iconEl.textContent  = d.icon  || (d.countdown ? '🌉' : '🗺️');
@@ -237,12 +239,16 @@ export class GuideCard {
   // ── Card actions ──────────────────────────────────────────────
 
   _onClose() {
+    if (this._completed) return;
+    this._closeBtn.disabled = true;
+    if (this._autoCloseTimer) { clearTimeout(this._autoCloseTimer); this._autoCloseTimer = null; }
     this.audio.stopSpeech();
     this._complete();
   }
 
   _complete() {
-    if (this._exited) return;
+    if (this._exited || this._completed) return;
+    this._completed = true;
     if (this.onComplete) this.onComplete();
   }
 }

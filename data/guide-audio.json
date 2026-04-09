@@ -7,8 +7,8 @@
   {
     "id": "quiz_intro",
     "file": "assets/audio/guides/quiz_intro.wav",
-    "text": "じゃじゃん、ここでクイズです！",
-    "ssml": "<speak version='1.0' xml:lang='ja-JP'><voice name='ja-JP-NanamiNeural'><prosody rate='+10%' pitch='+8%'><emphasis level='strong'>じゃじゃん、ここでクイズです！</emphasis></prosody></voice></speak>"
+    "text": "じゃ、じゃーーん、ここでクイズです",
+    "ssml": "<speak version='1.0' xml:lang='ja-JP'><voice name='ja-JP-NanamiNeural'><prosody rate='+12%' pitch='+10%'><emphasis level='strong'>じゃ、じゃーーん、ここでクイズです</emphasis></prosody></voice></speak>"
   },
   {
     "id": "rhythm_closing",
