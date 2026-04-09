@@ -7,13 +7,13 @@
   {
     "id": "quiz_intro",
     "file": "assets/audio/guides/quiz_intro.wav",
-    "text": "じゃ、じゃーーん、ここでクイズです",
-    "ssml": "<speak version='1.0' xml:lang='ja-JP'><voice name='ja-JP-NanamiNeural'><prosody rate='+12%' pitch='+10%'><emphasis level='strong'>じゃ、じゃーーん、ここでクイズです</emphasis></prosody></voice></speak>"
+    "text": "じゃじゃーーーーーーーん、ここでクイズです。",
+    "ssml": "<speak version='1.0' xml:lang='ja-JP'><voice name='ja-JP-NanamiNeural'><prosody rate='+12%' pitch='+10%'><emphasis level='strong'>じゃじゃーーーーーーーん、ここでクイズです。</emphasis></prosody></voice></speak>"
   },
   {
     "id": "rhythm_closing",
     "file": "assets/audio/guides/rhythm_closing.wav",
-    "text": "そろそろ目的につきます。楽しんで来てくださいね！ありがとうございました！アフィーラでした。忘れないでね。"
+    "text": "そろそろ目的地につきます。楽しんで来てくださいね！ありがとうございました！アフィーラでした。忘れないでね。"
   },
   {
     "id": "event_intro_miraikan",
@@ -23,7 +23,7 @@
   {
     "id": "event_shutoko_guide",
     "file": "assets/audio/guides/event_shutoko_guide.wav",
-    "text": "東京の高速道路は、どうしてこんなに複雑？東京の高速道路が複雑なのは、巨大な街ができたあとに、その上へ道路を通していったからです。まっすぐ作る余裕が少なく、建物や川をよけながら通したため、東京らしい独特な形になりました。このあと、海へ抜ける景色に変わっていきます。"
+    "text": "東京の高速道路は、どうしてこんなに複雑？ 東京の高速道路が複雑なのは、巨大な街ができたあとに、その上へ道路を通していったからです。まっすぐ作る余裕が少なく、建物や川をよけながら通したため、東京らしい独特な形になりました。このあと、海へ抜ける景色に変わっていきます。"
   },
   {
     "id": "event_rainbow_bridge_prelude",

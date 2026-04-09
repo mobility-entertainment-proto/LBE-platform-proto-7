@@ -4,7 +4,7 @@
 
 import { loadSongConfig } from '../../core/song-config.js';
 const RESULT_NARRATION = '結果はこちらです？楽しかったですか？今度は激むずバージョンをやってみてね。無理だろうけど。';
-const CLOSING_NARRATION = 'そろそろ目的につきます。楽しんで来てくださいね！ありがとうございました！アフィーラでした。忘れないでね。';
+const CLOSING_NARRATION = 'そろそろ目的地につきます。楽しんで来てくださいね！ありがとうございました！アフィーラでした。忘れないでね。';
 const CLOSING_AUDIO = 'assets/audio/guides/rhythm_closing.wav';
 
 const LIMIT_MS = 20000; // 20秒で強制終了
